@@ -1,0 +1,15 @@
+
+Starting Version 1 (Original)...
+....................
+Starting Version 2 (Upgraded)...
+....................
+
+=== Comparison Results ===
+[V1]
+1st: 0, 2nd: 0, 3rd: 7, 4th: 370, 5th: 5656
+Profit: -142,720,000 KRW, ROI: -71.36%
+[V2]
+1st: 0, 2nd: 0, 3rd: 14, 4th: 346, 5th: 5479
+Profit: -134,305,000 KRW, ROI: -67.15%
+
+✅ V2 Outperformed V1!
