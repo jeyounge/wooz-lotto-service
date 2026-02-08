@@ -8,6 +8,7 @@ import { ResultProcessor } from './utils/ResultProcessor'
 // Pages
 import Home from './pages/Home'
 import MyPage from './pages/MyPage'
+import RoundResult from './pages/RoundResult'
 
 import './App.css'
 
@@ -106,6 +107,41 @@ function App() {
                       return updated;
                   });
                   console.log(`Round ${newDrawRecord.drwNo} updated!`);
+
+                  // SYNC to DB (Critical for ResultProcessor)
+                  // We try to upsert this to 'lotto_history' table so the backend/processor sees it.
+                  try {
+                      // Map API format to DB columns (snake_case)
+                      const dbPayload = {
+                          drw_no: newDrawRecord.drwNo,
+                          drw_no_date: newDrawRecord.drwNoDate,
+                          numbers: newDrawRecord.numbers,
+                          bonus: newDrawRecord.bonus,
+                          first_win_amnt: newDrawRecord.firstWinamnt,
+                          first_przwner_co: newDrawRecord.firstPrzwnerCo,
+                          second_win_amnt: newDrawRecord.secondWinamnt,
+                          second_przwner_co: newDrawRecord.secondPrzwnerCo,
+                          third_win_amnt: newDrawRecord.thirdWinamnt,
+                          third_przwner_co: newDrawRecord.thirdPrzwnerCo,
+                          fourth_win_amnt: newDrawRecord.fourthWinamnt,
+                          fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
+                          fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
+                          fifth_win_amnt: newDrawRecord.fifthWinamnt,
+                          fifth_przwner_co: newDrawRecord.fifthPrzwnerCo,
+                          // Added detailed fields
+                          total_sell_amnt: newDrawRecord.totalSellAmnt,
+                          first_how: newDrawRecord.firstHow,
+                      };
+
+                      const { error: dbErr } = await supabase
+                          .from('lotto_history')
+                          .upsert(dbPayload, { onConflict: 'drw_no' });
+
+                      if (dbErr) console.error('Failed to sync round to DB:', dbErr);
+                      else console.log('Synced round to DB successfully.');
+                  } catch (syncErr) {
+                      console.error('DB Sync Exception:', syncErr);
+                  }
               }
           }
 
@@ -128,6 +164,7 @@ function App() {
               userProfile={userProfile}
               pastDraws={pastDraws}
               handleLogout={handleLogout}
+              refreshProfile={() => session && fetchProfile(session.user.id)}
             />
           } />
           
@@ -137,6 +174,10 @@ function App() {
                pastDraws={pastDraws}
                handleLogout={handleLogout}
             />
+          } />
+          
+          <Route path="/results" element={
+            <RoundResult pastDraws={pastDraws} />
           } />
 
           {/* Fallback */}

@@ -1,5 +1,5 @@
-const PROXY_URL = 'https://corsproxy.io/?';
-const TARGET_URL = 'https://data.soledot.com/lottowinnumber/fo/lottowinnumberlist.sd';
+// PROXY_URL removed - using Vite/Vercel proxy
+// TARGET_URL removed - using /api/lotto prefix
 
 export const LottoService = {
     // ... (getExpectedRound and checkUpdateNeeded remain same)
@@ -37,14 +37,15 @@ export const LottoService = {
         console.log(`[LottoService] Scraping Round ${drwNo} Detail...`);
         
         try {
-            // Use Detail View URL for full stats (CORS Proxy assumed necessary)
-            const detailUrl = `https://data.soledot.com/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd`;
-            const proxyUrl = `https://corsproxy.io/?${encodeURIComponent(detailUrl)}`;
+            // Use local proxy path (configured in vite.config.js and vercel.json)
+            // https://data.soledot.com/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
+            // -> /api/lotto/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
+            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd`;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); 
 
-            const response = await fetch(proxyUrl, { signal: controller.signal });
+            const response = await fetch(url, { signal: controller.signal });
             clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
@@ -124,9 +125,9 @@ export const LottoService = {
                 secondPrzwnerCo: ranks[2]?.count || 0,
                 thirdWinAmnt: ranks[3]?.prize || 0,
                 thirdPrzwnerCo: ranks[3]?.count || 0,
-                fourthWinAmnt: ranks[4]?.prize || 0,
+                fourthWinAmnt: ranks[4]?.prize || 50000, // Default fixed prize
                 fourthPrzwnerCo: ranks[4]?.count || 0,
-                fifthWinAmnt: ranks[5]?.prize || 0,
+                fifthWinAmnt: ranks[5]?.prize || 5000,   // Default fixed prize
                 fifthPrzwnerCo: ranks[5]?.count || 0,
             };
 

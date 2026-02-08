@@ -1,0 +1,7 @@
+{
+  "rewrites": [
+    { "source": "/api/lotto/:path*", "destination": "https://data.soledot.com/:path*" },
+    { "source": "/api/ugcr/:path*", "destination": "https://ugcr.soledot.com/:path*" },
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
+}

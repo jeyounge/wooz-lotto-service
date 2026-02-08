@@ -25,7 +25,18 @@ async function scrape() {
     console.log('Starting Scraper for data.soledot.com...');
     let history = [];
     
-    for (let page = 1; page <= MAX_PAGE; page++) {
+    // Load existing data to avoid overwrite
+    if (fs.existsSync(OUTPUT_FILE)) {
+        try {
+            history = JSON.parse(fs.readFileSync(OUTPUT_FILE, 'utf-8'));
+            console.log(`Loaded ${history.length} existing records.`);
+        } catch (e) {
+            console.error('Failed to load existing history:', e);
+        }
+    }
+    
+    // Optimized: Check only first page for quick update
+    for (let page = 1; page <= 1; page++) {
         try {
             console.log(`Fetching Page ${page}...`);
             const response = await axios.get(`${BASE_URL}?s_pagenum=${page}`, {
@@ -100,6 +111,9 @@ async function scrape() {
 
     // Sort by round descending
     history.sort((a, b) => b.drwNo - a.drwNo);
+
+    // Remove duplicates just in case
+    history = history.filter((v,i,a)=>a.findIndex(t=>(t.drwNo === v.drwNo))===i);
 
     console.log(`\nCollected ${history.length} records.`);
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(history, null, 2), 'utf-8');

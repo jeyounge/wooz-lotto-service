@@ -23,7 +23,10 @@ const check = async () => {
         .single();
 
     if (error) console.error('Fetch 1208 Error:', error);
-    else console.log('Round 1208 Data:', data);
+    else {
+        const keys = Object.keys(data);
+        console.log('Filtered Keys:', keys.filter(k => k.includes('drw') || k.includes('draw')));
+    }
 };
 
 check();

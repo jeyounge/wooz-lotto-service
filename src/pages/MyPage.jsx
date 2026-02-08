@@ -250,8 +250,42 @@ export default function MyPage({ session, pastDraws, handleLogout }) {
                         gap: '1rem'
                     }}>
                         <div style={{ flex: 1, width: '100%' }}>
-                            <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'12px', justifyContent: window.innerWidth > 600 ? 'flex-start' : 'center' }}>
+                            <div style={{ display:'flex', alignItems:'center', gap:'10px', marginBottom:'12px', justifyContent: window.innerWidth > 600 ? 'flex-start' : 'center', flexWrap: 'wrap' }}>
                                 <span style={{ color: '#aaa', fontSize: '0.9rem' }}>{new Date(pred.created_at).toLocaleString()}</span>
+                                
+                                {/* HIDDEN Badge */}
+                                {pred.is_hidden && (
+                                    <span style={{ 
+                                        fontSize: '0.75rem', 
+                                        background: 'rgba(50, 20, 20, 0.6)', 
+                                        border: '1px solid #b33939', 
+                                        color: '#ff6b6b', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}>
+                                        {Array.isArray(pred.analysis) ? pred.analysis[0] : '🕵️ Hidden'}
+                                    </span>
+                                )}
+
+                                {/* CHALLENGE Badge */}
+                                {pred.is_challenge && (
+                                    <span style={{ 
+                                        fontSize: '0.75rem', 
+                                        background: 'rgba(255, 0, 0, 0.1)', 
+                                        border: '1px solid #ff4d4d', 
+                                        color: '#ff4d4d', 
+                                        padding: '2px 8px', 
+                                        borderRadius: '12px',
+                                        display: 'flex',
+                                        alignItems: 'center',
+                                        gap: '4px'
+                                    }}>
+                                        🔥 5-KILL Challenge
+                                    </span>
+                                )}
                             </div>
                             
                             <div style={{ display: 'flex', gap: '8px', justifyContent: 'center' }}>

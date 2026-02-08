@@ -166,6 +166,19 @@ class LottoPredictorV2 {
             `🛡️ 과거 1등 완전중복만 제외 (2/3등 가능성 확대)`
         ];
     }
+
+    getScores(numbers) {
+         return numbers.map(n => ({ num: n, score: this.scores[n] ? Math.round(this.scores[n]) : 0 }));
+    }
+
+    getAllScores() {
+        const all = [];
+        for(let i=1; i<=45; i++) {
+            all.push({ num: i, score: this.scores[i] ? Math.round(this.scores[i]) : 0 });
+        }
+        return all.sort((a,b) => b.score - a.score);
+    }
 }
+
 
 export default LottoPredictorV2;

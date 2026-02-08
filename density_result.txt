@@ -1,0 +1,13 @@
+--- Density Pattern Probability ---
+Max_2: 704 rounds (58.2%)
+Max_3: 434 rounds (35.9%)
+Max_4: 66 rounds (5.5%)
+Max_5: 3 rounds (0.2%)
+Max_6: 2 rounds (0.2%)
+
+--- High Density (3+) by Decade ---
+[30-39]: 145 times
+[10-19]: 141 times
+[20-29]: 119 times
+[1-9]: 81 times
+[40-45]: 31 times

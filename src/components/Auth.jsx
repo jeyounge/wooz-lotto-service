@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { supabase } from '../supabaseClient'
 
-export default function Auth({ onLogin }) {
+export default function Auth({ onLoginSuccess }) {
   const [loading, setLoading] = useState(false)
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
@@ -24,12 +24,22 @@ export default function Auth({ onLogin }) {
         // Manual Profile Creation (Reliable backup for Trigger)
         if (data?.user) {
             const { error: profileError } = await supabase
+
                 .from('profiles')
-                .insert([{ id: data.user.id, nickname: nickname }]);
+                .upsert(
+                    [{ id: data.user.id, nickname: nickname }], 
+                    { onConflict: 'id' } // If ID exists, update nickname
+                );
             
             if (profileError) {
                 console.error('Profile creation failed:', profileError);
-                // Optional: alert('프로필 생성 실패. 관리자에게 문의하세요.');
+                alert('프로필 생성 실패 오류: ' + profileError.message);
+            } else {
+                console.log('Profile created successfully');
+                if (onLoginSuccess) {
+                    // Small delay to ensure DB propagation
+                    setTimeout(() => onLoginSuccess(), 500);
+                }
             }
         }
 
