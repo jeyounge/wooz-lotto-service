@@ -351,7 +351,7 @@ export default function RoundResult({ pastDraws }) {
                          </div>
                     ) : (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
-                            {winners.map(w => (
+                            {winners.filter(w => w.rank < 6).map(w => (
                                 <div key={w.id} className="winner-card fade-in" style={{ 
                                     display: 'flex', 
                                     alignItems: 'center', 
