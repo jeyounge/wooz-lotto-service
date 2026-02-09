@@ -1,0 +1,59 @@
+=== V4 Backtest Report ===
+
+[V4] Saved Hot Number 27 from execution (Digit Rule)
+[Round 1210]
+- Kill List: [24, 7, 37, 17, 11]
+- Reasons:
+  * 24: Last Bonus (직전 보너스 - 패턴 필살)
+  * 7: Weakest of Hot Digit 7 (안전장치 통과)
+  * 37: Weakest of Hot Digit 7 (안전장치 통과)
+  * 17: Weakest of Hot Digit 7 (안전장치 통과)
+  * 11: Coldest Number (최근 10주 0회)
+❌ FAILURE: Excluded Winning Numbers: [7, 17]
+
+[Round 1209]
+- Kill List: [27, 25, 11, 21, 41]
+- Reasons:
+  * 27: 3-Consecutive (3주 연속 출현 - 패턴 필살)
+  * 25: Last Bonus (직전 보너스 - 패턴 필살)
+  * 11: Weakest of Hot Digit 1 (안전장치 통과)
+  * 21: Weakest of Hot Digit 1 (안전장치 통과)
+  * 41: Weakest of Hot Digit 1 (안전장치 통과)
+✅ SUCCESS: Safe Exclusion
+
+[V4] Saved Hot Number 1 from execution (Digit Rule)
+[V4] Saved Hot Number 31 from execution (Digit Rule)
+[Round 1208]
+- Kill List: [11, 21, 41, 13, 14]
+- Reasons:
+  * 11: Last Bonus (직전 보너스 - 패턴 필살)
+  * 21: Weakest of Hot Digit 1 (안전장치 통과)
+  * 41: Weakest of Hot Digit 1 (안전장치 통과)
+  * 13: Coldest Number (최근 10주 0회)
+  * 14: Coldest Number (최근 10주 0회)
+✅ SUCCESS: Safe Exclusion
+
+[V4] Saved Hot Number 1 from execution (Digit Rule)
+[V4] Saved Hot Number 31 from execution (Digit Rule)
+[Round 1207]
+- Kill List: [23, 11, 21, 41, 10]
+- Reasons:
+  * 23: Last Bonus (직전 보너스 - 패턴 필살)
+  * 11: Weakest of Hot Digit 1 (안전장치 통과)
+  * 21: Weakest of Hot Digit 1 (안전장치 통과)
+  * 41: Weakest of Hot Digit 1 (안전장치 통과)
+  * 10: Coldest Number (최근 10주 0회)
+❌ FAILURE: Excluded Winning Numbers: [10]
+
+[V4] Saved Hot Number 1 from execution (Digit Rule)
+[V4] Saved Hot Number 31 from execution (Digit Rule)
+[Round 1206]
+- Kill List: [2, 11, 21, 41, 10]
+- Reasons:
+  * 2: Last Bonus (직전 보너스 - 패턴 필살)
+  * 11: Weakest of Hot Digit 1 (안전장치 통과)
+  * 21: Weakest of Hot Digit 1 (안전장치 통과)
+  * 41: Weakest of Hot Digit 1 (안전장치 통과)
+  * 10: Coldest Number (최근 10주 0회)
+✅ SUCCESS: Safe Exclusion
+

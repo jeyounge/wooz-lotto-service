@@ -1,0 +1,10 @@
+Analyzing for Round 1210 using 1209 records...
+
+=== Round 1210 Prediction ===
+KILL_NUMBERS (Excluded): [27, 24, 7]
+Kill List Size: 3
+
+Reasons:
+- 7: Weakest of Hot Digit 7 (끝수법칙)
+- 24: Last Bonus (직전 보너스)
+- 27: Max Freq last 10 (4회 출현)

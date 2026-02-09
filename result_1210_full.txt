@@ -1,0 +1,15 @@
+Analyzing for Round 1210 using 1209 records...
+
+=== Round 1210 Prediction (3-Kill) ===
+KILL_NUMBERS: [27, 24, 7]
+- 7: Weakest of Hot Digit 7 (끝수법칙)
+- 24: Last Bonus (직전 보너스)
+- 27: Max Freq last 10 (4회 출현)
+
+=== Round 1210 Prediction (5-Kill) ===
+KILL_NUMBERS: [27, 24, 7, 1, 35]
+- 1: 🔥 Hot Neighbor (최근 5주 과열 이웃수)
+- 7: Weakest of Hot Digit 7 (끝수법칙)
+- 24: Last Bonus (직전 보너스)
+- 27: Max Freq last 10 (4회 출현)
+- 35: 🔥 Hot Carryover (최근 10주 과열 이월수)
