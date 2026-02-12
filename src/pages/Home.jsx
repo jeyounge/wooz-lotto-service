@@ -309,7 +309,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
     <div className="home-layout">
         <main className="main-board">
             <header className="main-header">
-                <h1 className="glow-title">우제로또 예측 시스템</h1>
+                <h1 className="glow-title">로또 Z 예측 시스템</h1>
                 <div style={{ display:'flex', gap:'15px', justifyContent:'center', marginTop:'10px', color:'#aaa', fontSize:'0.85rem', flexWrap:'wrap' }}>
                    <span>🎯 전체: <strong style={{ color:'#ffd700' }}>{globalStats.count.toLocaleString()}</strong></span>
                    <span>🔥 <strong>{nextRound}회</strong>: <strong style={{ color:'#ff9f43' }}>{globalStats.currentRoundCount?.toLocaleString() || 0}</strong></span>
@@ -346,7 +346,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     {/* CORE 3-KILL */}
                     <div className="kill-section-core">
                         <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#ff4d4d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}>
-                            {currentPredictor.killCount > 3 ? '⚔️ 기본 3-KILL (핵심)' : '☠️ 우제로또 핵심 기법 [3-KILL]'}
+                            {currentPredictor.killCount > 3 ? '⚔️ 기본 3-KILL (핵심)' : '☠️ 로또 Z 핵심 기법 [3-KILL]'}
                         </h3>
                         <div className="kill-list" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
                             {currentPredictor.killList.slice(0, 3).map(num => (

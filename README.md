@@ -1,9 +1,9 @@
-# 우제로또 예측 시스템 (Wooz Lotto)
+# 로또 Z - AI 번호 예측 (Lotto Z)
 
-**우제로또(Wooz Lotto)**는 React와 고도화된 통계 분석 로직을 기반으로 제작된 현대적인 웹 로또 예측 애플리케이션입니다. 과거 데이터 시뮬레이션을 통해 검증된 최적의 번호 조합 전략을 사용자에게 제공합니다.
+**로또 Z(Lotto Z)**는 React와 고도화된 통계 분석 로직을 기반으로 제작된 현대적인 웹 로또 예측 애플리케이션입니다. 과거 데이터 시뮬레이션을 통해 검증된 최적의 번호 조합 전략을 사용자에게 제공합니다.
 
 ## 🚀 라이브 데모 (Live Demo)
-**접속 주소**: [https://wooz-lotto-react.vercel.app](https://wooz-lotto-react.vercel.app)
+**접속 주소**: [https://lotto.z-labs.kr](https://lotto.z-labs.kr)
 
 ---
 
