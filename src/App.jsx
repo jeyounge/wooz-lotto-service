@@ -9,6 +9,7 @@ import { ResultProcessor } from './utils/ResultProcessor'
 import Home from './pages/Home'
 import MyPage from './pages/MyPage'
 import RoundResult from './pages/RoundResult'
+import InquiryPage from './pages/InquiryPage'
 
 import './App.css'
 
@@ -179,6 +180,8 @@ function App() {
           <Route path="/results" element={
             <RoundResult pastDraws={pastDraws} />
           } />
+          
+          <Route path="/inquiry" element={<InquiryPage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

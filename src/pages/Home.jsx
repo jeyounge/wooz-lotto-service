@@ -525,7 +525,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                 </div>
                 <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', fontSize: '0.75rem', color: '#666' }}>
                     © 2026 Lotto Z. <br/>
-                    <a href="https://z-labs.kr/inquiry" target="_blank" rel="noopener noreferrer" style={{ color: '#888', textDecoration: 'underline' }}>문의하기</a>
+                    <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
                 </div>
             </div>
         </aside>
