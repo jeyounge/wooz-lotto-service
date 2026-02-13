@@ -114,13 +114,23 @@ class LottoPredictorV2 {
     validate(numbers) {
         // 1. Consecutive: Max 2 consecutive (e.g. 11,12 ok. 11,12,13 fail)
         let consecutiveCount = 1;
+        let hasConsecutivePair = false;
+        
         for (let i = 1; i < numbers.length; i++) {
             if (numbers[i] === numbers[i-1] + 1) {
                 consecutiveCount++;
-                if (consecutiveCount > 2) return false; 
+                if (consecutiveCount > 2) return false; // Reject 3-consecutive immediately
+                if (consecutiveCount === 2) hasConsecutivePair = true;
             } else {
                 consecutiveCount = 1;
             }
+        }
+
+        // Algo Option 3: Reduce frequency of consecutive pairs
+        // If a consecutive pair exists (e.g. 21, 22), only keep it 30% of the time.
+        // This makes "clean" combinations more frequent while maintaining valid probability.
+        if (hasConsecutivePair) {
+             if (Math.random() > 0.3) return false; 
         }
 
         // 2. Odd/Even: Reject 6:0 or 0:6
