@@ -21,7 +21,7 @@ function App() {
   // --- State: Official Past Draws (Global Data) ---
   const [pastDraws, setPastDraws] = useState(() => {
      // 1. Check Cache
-     const cached = localStorage.getItem('officialDrawsCache');
+     const cached = localStorage.getItem('officialDrawsCache_v2');
      const cachedDraws = cached ? JSON.parse(cached) : [];
      // 2. Merge
      const cachedIds = new Set(cachedDraws.map(d => d.drwNo));
@@ -98,12 +98,12 @@ function App() {
                   setPastDraws(prev => {
                       const updated = [newDrawRecord, ...prev].sort((a,b) => b.drwNo - a.drwNo);
                       
-                      const existingCache = localStorage.getItem('officialDrawsCache');
+                      const existingCache = localStorage.getItem('officialDrawsCache_v2');
                       const cacheArr = existingCache ? JSON.parse(existingCache) : [];
                       
                       if (!cacheArr.find(d => d.drwNo === newDrawRecord.drwNo)) {
                           const newCache = [newDrawRecord, ...cacheArr];
-                          localStorage.setItem('officialDrawsCache', JSON.stringify(newCache));
+                          localStorage.setItem('officialDrawsCache_v2', JSON.stringify(newCache));
                       }
                       return updated;
                   });
