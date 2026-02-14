@@ -332,7 +332,6 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                             <div className={`mini-ball ball-${getBallColor(lastRound.bonus)}`}>{lastRound.bonus}</div>
                         </div>
                         <div className="lr-footer">
-                        <div className="lr-footer">
                             <span className="winner-count">1등 당첨자: <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : '집계 중'}</strong></span>
                             <span className="prize-amt">당첨금: <strong>{lastRound.firstWinamnt > 0 ? `₩${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}` : '집계 중'}</strong></span>
                         </div>
