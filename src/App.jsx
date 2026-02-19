@@ -98,12 +98,12 @@ function App() {
                   setPastDraws(prev => {
                       const updated = [newDrawRecord, ...prev].sort((a,b) => b.drwNo - a.drwNo);
                       
-                      const existingCache = localStorage.getItem('officialDrawsCache_v2');
+                      const existingCache = localStorage.getItem('officialDrawsCache_v3');
                       const cacheArr = existingCache ? JSON.parse(existingCache) : [];
                       
                       if (!cacheArr.find(d => d.drwNo === newDrawRecord.drwNo)) {
                           const newCache = [newDrawRecord, ...cacheArr];
-                          localStorage.setItem('officialDrawsCache_v2', JSON.stringify(newCache));
+                          localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newCache));
                       }
                       return updated;
                   });
