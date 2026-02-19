@@ -71,18 +71,30 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
             .limit(30);
 
         if (!error && data) {
-            // Calculate effectiveness
-            const total = data.length;
-            const success3 = data.filter(r => r.kill3_success).length;
-            const success5 = data.filter(r => r.kill5_success).length;
+            // Calculate effectiveness (Per Number Basis for Higher %)
+            const totalRounds = data.length;
             
+            // 3-Kill Stats
+            // Each round has 3 numbers. Total candidates = rounds * 3
+            // Hit count is how many FAILED (appeared). Success = Total - Hit
+            const totalKill3Candidates = totalRounds * 3;
+            const totalKill3Hits = data.reduce((acc, curr) => acc + (curr.kill3_hit_count || 0), 0);
+            const totalKill3Success = totalKill3Candidates - totalKill3Hits;
+            
+            // 5-Kill Stats
+            const totalKill5Candidates = totalRounds * 5;
+            const totalKill5Hits = data.reduce((acc, curr) => acc + (curr.kill5_hit_count || 0), 0);
+            const totalKill5Success = totalKill5Candidates - totalKill5Hits;
+
             setKillStats({
                 recent: data.slice(0, 5), // Show top 5 in table
-                total,
-                successRate3: Math.round((success3 / total) * 100),
-                successRate5: Math.round((success5 / total) * 100),
-                successCount3: success3,
-                successCount5: success5
+                total: totalRounds,
+                successRate3: Math.round((totalKill3Success / totalKill3Candidates) * 100),
+                successRate5: Math.round((totalKill5Success / totalKill5Candidates) * 100),
+                successCount3: totalKill3Success, // Display actual excluded numbers
+                successCount5: totalKill5Success,
+                totalCandidates3: totalKill3Candidates,
+                totalCandidates5: totalKill5Candidates
             });
         }
       };
@@ -379,19 +391,19 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     
                     <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>3-KILL 성공</div>
+                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>3-KILL 제외 적중</div>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate3 >= 80 ? '#00f260' : '#fff' }}>
                                 {killStats.successRate3}%
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount3}/{killStats.total}회)</div>
+                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount3}/{killStats.totalCandidates3}개)</div>
                         </div>
                         <div style={{ width: '1px', background: '#444' }}></div>
                         <div style={{ textAlign: 'center' }}>
-                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 성공</div>
+                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 제외 적중</div>
                             <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#fab1a0' : '#fff' }}>
                                 {killStats.successRate5}%
                             </div>
-                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount5}/{killStats.total}회)</div>
+                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount5}/{killStats.totalCandidates5}개)</div>
                         </div>
                     </div>
 
