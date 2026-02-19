@@ -10,7 +10,7 @@ on:
 jobs:
   sync:
     runs-on: ubuntu-latest
-    
+
     steps:
       - name: Checkout Repository
         uses: actions/checkout@v4
@@ -24,13 +24,35 @@ jobs:
       - name: Install Dependencies
         run: npm ci
 
-      - name: Run Collector & Sync to DB
+      - name: Run Collector with Retry (max 5 attempts, 30min interval)
         env:
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
-        run: node collector.js
+        run: |
+          MAX_ATTEMPTS=5
+          WAIT_SECONDS=1800  # 30 minutes
+
+          for attempt in $(seq 1 $MAX_ATTEMPTS); do
+            echo "============================="
+            echo "🎯 Attempt $attempt / $MAX_ATTEMPTS"
+            echo "============================="
+
+            node collector.js && {
+              echo "✅ Success on attempt $attempt!"
+              exit 0
+            }
+
+            if [ $attempt -lt $MAX_ATTEMPTS ]; then
+              echo "⏳ Data not ready yet. Waiting 30 minutes before retry..."
+              sleep $WAIT_SECONDS
+            fi
+          done
+
+          echo "❌ All $MAX_ATTEMPTS attempts failed. Data may not be available yet."
+          exit 1
 
       - name: Commit Updated lottoHistory.json
+        if: success()
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "github-actions[bot]@users.noreply.github.com"

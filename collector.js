@@ -180,11 +180,15 @@ async function scrape() {
         for (const item of newItems) {
             await syncToDB(item);
         }
+        console.log('✅ New data synced! Exiting with success.');
+        process.exit(0); // Signal success to GitHub Actions
     } else {
-        console.log('No new rounds to sync.');
-        // Optional: Force sync latest round just in case
-        if (history.length > 0) await syncToDB(history[0]);
+        console.log('⚠️  No new rounds found. Data may not be available yet.');
+        process.exit(1); // Signal to retry
     }
 }
 
-scrape();
+scrape().catch(err => {
+    console.error('❌ Scrape failed:', err.message);
+    process.exit(1); // Retry on unexpected error
+});
