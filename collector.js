@@ -43,7 +43,93 @@ const supabase = createClient(
 
 const BASE_URL = 'https://data.soledot.com/lottowinnumber/fo/lottowinnumberlist.sd';
 
-async function syncToDB(round) {
+/**
+ * LottoPredictorV4 Logic Ported for Node.js
+ */
+function computeKillStrategy(history, killCount) {
+    if (!history || history.length < 15) {
+        return { killList: [], killReasons: {} };
+    }
+
+    const sorted = [...history].sort((a, b) => b.drwNo - a.drwNo);
+    const kills = new Set();
+    const killReasons = {};
+
+    // Hot Safety Valve
+    const last10 = sorted.slice(0, 10);
+    const counts10 = {};
+    last10.forEach(r => r.numbers.forEach(n => counts10[n] = (counts10[n] || 0) + 1));
+    const isHot = (num) => (counts10[num] || 0) >= 3;
+
+    const addKill = (num, reason) => {
+        if (kills.size >= killCount) return;
+        if (!kills.has(num)) {
+            kills.add(num);
+            killReasons[num] = reason;
+        }
+    };
+
+    // Priority 1: 3-Consecutive
+    const r0 = sorted[0].numbers;
+    const r1 = sorted[1].numbers;
+    const r2 = sorted[2].numbers;
+    for (let i = 1; i <= 45; i++) {
+        if (r0.includes(i) && r1.includes(i) && r2.includes(i)) {
+            addKill(i, '3-Consecutive (3주 연속 출현)');
+            break;
+        }
+    }
+
+    // Priority 2: Last Bonus
+    if (kills.size < killCount) {
+        const lastBonus = sorted[0].bonus;
+        if (lastBonus) addKill(lastBonus, 'Last Bonus (직전 보너스)');
+    }
+
+    // Priority 3: Weakest of Hot Digit
+    if (kills.size < killCount) {
+        const last5 = sorted.slice(0, 5);
+        const digitsCount = {};
+        const numCounts = {};
+        last5.forEach(r => {
+            r.numbers.forEach(n => {
+                const digit = n % 10;
+                digitsCount[digit] = (digitsCount[digit] || 0) + 1;
+                numCounts[n] = (numCounts[n] || 0) + 1;
+            });
+        });
+
+        const hottestDigitEntry = Object.entries(digitsCount).sort((a, b) => b[1] - a[1])[0];
+        if (hottestDigitEntry) {
+            const targetDigit = parseInt(hottestDigitEntry[0]);
+            const candidates = [];
+            for (let i = 1; i <= 45; i++) {
+                if (i % 10 === targetDigit) candidates.push(i);
+            }
+            candidates.sort((a, b) => (numCounts[a] || 0) - (numCounts[b] || 0));
+            for (const cand of candidates) {
+                if (isHot(cand)) continue;
+                addKill(cand, `Weakest of Hot Digit ${targetDigit}`);
+                if (kills.size >= killCount) break;
+            }
+        }
+    }
+
+    // Priority 4: Coldest Numbers
+    if (kills.size < killCount) {
+        const allNums = Array.from({ length: 45 }, (_, i) => i + 1);
+        allNums.sort((a, b) => (counts10[a] || 0) - (counts10[b] || 0));
+        for (const cand of allNums) {
+            if (isHot(cand)) continue;
+            addKill(cand, `Coldest Number (최근 10주 ${counts10[cand] || 0}회)`);
+            if (kills.size >= killCount) break;
+        }
+    }
+
+    return { killList: Array.from(kills), killReasons };
+}
+
+async function syncToDB(round, fullHistory) {
     console.log(`[DB Sync] Syncing Round ${round.drwNo}...`);
     const params = {
         p_drw_no: round.drwNo,
@@ -70,6 +156,46 @@ async function syncToDB(round) {
         console.error(`❌ [DB Sync] Error ${round.drwNo}:`, error.message);
     } else {
         console.log(`✅ [DB Sync] Success ${round.drwNo}`);
+
+        // --- ALSO SYNC KILL RECORDS ---
+        if (fullHistory) {
+            // Filter history strictly BEFORE this round
+            const prevData = fullHistory.filter(h => h.drwNo < round.drwNo);
+            
+            if (prevData.length >= 15) {
+                // 3-Kill
+                const kill3 = computeKillStrategy(prevData, 3);
+                const kill3HitCount = kill3.killList.filter(k => round.numbers.includes(k)).length;
+                const kill3Success = kill3HitCount === 0;
+
+                // 5-Kill
+                const kill5 = computeKillStrategy(prevData, 5);
+                const kill5HitCount = kill5.killList.filter(k => round.numbers.includes(k)).length;
+                const kill5Success = kill5HitCount === 0;
+
+                const killParams = {
+                    p_drw_no:          round.drwNo,
+                    p_actual_numbers:  round.numbers,
+                    p_kill3_list:      kill3.killList,
+                    p_kill3_reasons:   kill3.killReasons,
+                    p_kill3_hit_count: kill3HitCount,
+                    p_kill3_success:   kill3Success,
+                    p_kill5_list:      kill5.killList,
+                    p_kill5_reasons:   kill5.killReasons,
+                    p_kill5_hit_count: kill5HitCount,
+                    p_kill5_success:   kill5Success,
+                };
+                
+                const { error: killErr } = await supabase.rpc('upsert_kill_record', killParams);
+                if (killErr) {
+                    console.error(`⚠️ [Kill Sync] Error ${round.drwNo}:`, killErr.message);
+                } else {
+                    console.log(`🛡️ [Kill Sync] Success ${round.drwNo} (3-Kill: ${kill3Success ? '✅' : '❌'})`);
+                }
+            } else {
+                console.log(`⚠️ [Kill Sync] Skipped ${round.drwNo} (Not enough history)`);
+            }
+        }
     }
 }
 
@@ -176,9 +302,13 @@ async function scrape() {
 
     // SYNC TO DB
     if (newItems.length > 0) {
-        console.log(`Syncing ${newItems.length} new/updated rounds to DB...`);
+        // Optional: Force sync latest round just in case (useful for dev/debugging)
+        if (history.length > 0) {
+             // Uncomment to force re-sync latest round for kill stats testing
+             // await syncToDB(history[0], history);
+        }
         for (const item of newItems) {
-            await syncToDB(item);
+            await syncToDB(item, history);
         }
         console.log('✅ New data synced! Exiting with success.');
         process.exit(0); // Signal success to GitHub Actions
