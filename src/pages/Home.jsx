@@ -19,7 +19,10 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
   // Derived Data (Moved Up)
   const lastRound = useMemo(() => {
     if (!pastDraws || pastDraws.length === 0) return null;
-    return pastDraws[0];
+    // Find the most recent round that has confirmed data (firstPrzwnerCo > 0)
+    // This prevents showing 집계 중 when a new round is detected but data isn't ready
+    const confirmed = pastDraws.find(d => d.firstPrzwnerCo > 0);
+    return confirmed || pastDraws[0]; // Fallback to latest if none confirmed
   }, [pastDraws]);
   
   const nextRound = useMemo(() => {
