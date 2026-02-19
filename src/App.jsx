@@ -21,7 +21,7 @@ function App() {
   // --- State: Official Past Draws (Global Data) ---
   const [pastDraws, setPastDraws] = useState(() => {
      // 1. Check Cache
-     const cached = localStorage.getItem('officialDrawsCache_v2');
+     const cached = localStorage.getItem('officialDrawsCache_v3');
      const cachedDraws = cached ? JSON.parse(cached) : [];
      // 2. Merge
      const cachedIds = new Set(cachedDraws.map(d => d.drwNo));
