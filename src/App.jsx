@@ -87,6 +87,46 @@ function App() {
   // --- Auto-Update Official Draws ---
   useEffect(() => {
       const checkForUpdates = async () => {
+          // 1. First, try to sync recent rounds from DB (source of truth)
+          try {
+              const { data: dbRounds, error: dbErr } = await supabase
+                  .from('lotto_history')
+                  .select('drw_no, drw_no_date, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
+                  .order('drw_no', { ascending: false })
+                  .limit(5);
+
+              if (!dbErr && dbRounds && dbRounds.length > 0) {
+                  // Convert snake_case DB fields to camelCase for frontend
+                  const mappedRounds = dbRounds.map(r => ({
+                      drwNo: r.drw_no,
+                      drwNoDate: r.drw_no_date,
+                      numbers: r.numbers,
+                      bonus: r.bonus,
+                      firstWinamnt: r.first_win_amnt,
+                      firstPrzwnerCo: r.first_przwner_co,
+                      secondWinamnt: r.second_win_amnt,
+                      secondPrzwnerCo: r.second_przwner_co,
+                      thirdWinamnt: r.third_win_amnt,
+                      thirdPrzwnerCo: r.third_przwner_co,
+                      fourthWinamnt: r.fourth_win_amnt,
+                      fourthPrzwnerCo: r.fourth_przwner_co,
+                      fifthWinamnt: r.fifth_win_amnt,
+                      fifthPrzwnerCo: r.fifth_przwner_co,
+                  }));
+
+                  // Merge: DB data takes precedence over JSON for recent rounds
+                  setPastDraws(prev => {
+                      const dbIds = new Set(mappedRounds.map(d => d.drwNo));
+                      const filtered = prev.filter(d => !dbIds.has(d.drwNo));
+                      return [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
+                  });
+                  console.log('[DB] Synced recent rounds from lotto_history:', mappedRounds.map(r => r.drwNo));
+              }
+          } catch (e) {
+              console.warn('[DB] Could not fetch lotto_history:', e);
+          }
+
+          // 2. Check if new round is available from scraping
           const currentLatestDraw = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
           const neededRound = LottoService.checkUpdateNeeded(currentLatestDraw);
 
@@ -109,10 +149,8 @@ function App() {
                   });
                   console.log(`Round ${newDrawRecord.drwNo} updated!`);
 
-                  // SYNC to DB (Critical for ResultProcessor)
-                  // We try to upsert this to 'lotto_history' table so the backend/processor sees it.
+                  // SYNC to DB
                   try {
-                      // Map API format to DB columns (snake_case)
                       const dbPayload = {
                           drw_no: newDrawRecord.drwNo,
                           drw_no_date: newDrawRecord.drwNoDate,
@@ -126,10 +164,8 @@ function App() {
                           third_przwner_co: newDrawRecord.thirdPrzwnerCo,
                           fourth_win_amnt: newDrawRecord.fourthWinamnt,
                           fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
-                          fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
                           fifth_win_amnt: newDrawRecord.fifthWinamnt,
                           fifth_przwner_co: newDrawRecord.fifthPrzwnerCo,
-                          // Added detailed fields
                           total_sell_amnt: newDrawRecord.totalSellAmnt,
                           first_how: newDrawRecord.firstHow,
                       };
@@ -146,8 +182,7 @@ function App() {
               }
           }
 
-          // Background Job: Process pending results for crowd-sourced updates
-          // Run slightly delayed to not block UI hydration
+          // Background Job: Process pending results
           setTimeout(() => {
              ResultProcessor.processPending(supabase);
           }, 3000);
