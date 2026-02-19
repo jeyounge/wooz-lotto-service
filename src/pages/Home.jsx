@@ -15,6 +15,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
   const [isAnalyzing, setIsAnalyzing] = useState(false)
   const [allWeights, setAllWeights] = useState([])
   const [globalStats, setGlobalStats] = useState({ count: 0, totalPrize: 0, currentRoundCount: 0 })
+  const [killStats, setKillStats] = useState(null) // New State for Kill Stats
 
   // Derived Data (Moved Up)
   const lastRound = useMemo(() => {
@@ -60,6 +61,33 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
       };
       
       fetchStats();
+      
+      // Fetch Kill Stats (New)
+      const fetchKillStats = async () => {
+        const { data, error } = await supabase
+            .from('kill_records')
+            .select('*')
+            .order('drw_no', { ascending: false })
+            .limit(30);
+
+        if (!error && data) {
+            // Calculate effectiveness
+            const total = data.length;
+            const success3 = data.filter(r => r.kill3_success).length;
+            const success5 = data.filter(r => r.kill5_success).length;
+            
+            setKillStats({
+                recent: data.slice(0, 5), // Show top 5 in table
+                total,
+                successRate3: Math.round((success3 / total) * 100),
+                successRate5: Math.round((success5 / total) * 100),
+                successCount3: success3,
+                successCount5: success5
+            });
+        }
+      };
+      fetchKillStats();
+
   }, [nextRound]);
   
   // Local History State
@@ -341,6 +369,69 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     </div>
                 )}
             </section>
+
+            {/* KILL STRATEGY STATS CARD */}
+            {killStats && (
+                <section className="kill-stats-card fade-in" style={{ margin: '0 20px 20px', padding: '15px', background: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
+                    <h3 style={{ margin: '0 0 10px', fontSize: '1rem', color: '#ff6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
+                        🛡️ 킬 전략 적중률 (최근 {killStats.total}회)
+                    </h3>
+                    
+                    <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>3-KILL 성공</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate3 >= 80 ? '#00f260' : '#fff' }}>
+                                {killStats.successRate3}%
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount3}/{killStats.total}회)</div>
+                        </div>
+                        <div style={{ width: '1px', background: '#444' }}></div>
+                        <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 성공</div>
+                            <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#fab1a0' : '#fff' }}>
+                                {killStats.successRate5}%
+                            </div>
+                            <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount5}/{killStats.total}회)</div>
+                        </div>
+                    </div>
+
+                    <div className="kill-history-table">
+                        <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
+                            <thead>
+                                <tr style={{ borderBottom: '1px solid #444', color: '#888' }}>
+                                    <th style={{ padding: '5px', textAlign: 'left' }}>회차</th>
+                                    <th style={{ padding: '5px' }}>3-KILL</th>
+                                    <th style={{ padding: '5px', textAlign: 'right' }}>결과</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {killStats.recent.map(r => (
+                                    <tr key={r.drw_no} style={{ borderBottom: '1px solid #2a2a2a', color: '#ddd' }}>
+                                        <td style={{ padding: '8px 5px', color: '#aaa' }}>{r.drw_no}</td>
+                                        <td style={{ padding: '8px 5px', textAlign: 'center' }}>
+                                            <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
+                                                {r.kill3_list && r.kill3_list.map(n => (
+                                                    <span key={n} style={{ 
+                                                        background: r.actual_numbers.includes(n) ? '#ff4d4d' : '#333',
+                                                        color: r.actual_numbers.includes(n) ? '#fff' : '#aaa',
+                                                        padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem',
+                                                        textDecoration: r.actual_numbers.includes(n) ? 'none' : 'line-through'
+                                                    }}>
+                                                        {n}
+                                                    </span>
+                                                ))}
+                                            </div>
+                                        </td>
+                                        <td style={{ padding: '8px 5px', textAlign: 'right' }}>
+                                            {r.kill3_success ? '✅' : '❌'}
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </section>
+            )}
 
             {/* KILL Strategy Banner - Dynamic based on currentPredictor state */}
             {currentPredictor.killList && currentPredictor.killList.length > 0 && (
