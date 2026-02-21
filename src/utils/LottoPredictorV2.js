@@ -1,25 +1,25 @@
 class LottoPredictorV2 {
     constructor(historyData) {
         this.history = historyData;
-        
+
         // Configuration for Weights (Lotto 2.1)
         this.WEIGHT_LAST_5 = 40;  // Reduced slightly from 50
         this.WEIGHT_LAST_10 = 10; // New: Recent 10 context
-        this.WEIGHT_LAST_30 = 20; 
-        
+        this.WEIGHT_LAST_30 = 20;
+
         this.scores = {};
         this.excludedNumbers = [];
         this.init();
     }
 
     init() {
-        // Initialize scores with base value
-        for (let i = 1; i <= 45; i++) this.scores[i] = 20; 
+        // Initialize scores with base value (Increased from 20 to 40 to give cold numbers more chance)
+        for (let i = 1; i <= 45; i++) this.scores[i] = 40;
 
         if (!this.history || this.history.length === 0) return;
 
         // Sort history by Date Descending (Newest first)
-        const sorted = [...this.history].sort((a,b) => b.drwNo - a.drwNo);
+        const sorted = [...this.history].sort((a, b) => b.drwNo - a.drwNo);
 
         // 1. Scoring (Weights)
         // A. Last 5 (Hot)
@@ -36,13 +36,13 @@ class LottoPredictorV2 {
         sorted.slice(0, 30).forEach(round => {
             round.numbers.forEach(n => this.scores[n] += this.WEIGHT_LAST_30);
         });
-        
+
         // D. Cold Numbers (Haven't appeared in last 15)
         const recent15 = new Set();
         sorted.slice(0, 15).forEach(r => r.numbers.forEach(n => recent15.add(n)));
-        
-        for(let i=1; i<=45; i++) {
-            if(!recent15.has(i)) {
+
+        for (let i = 1; i <= 45; i++) {
+            if (!recent15.has(i)) {
                 this.scores[i] += 15; // Boost cold numbers slightly to prevent total starvation
             }
         }
@@ -52,11 +52,11 @@ class LottoPredictorV2 {
             const r1 = sorted[0].numbers;
             const r2 = sorted[1].numbers;
             const r3 = sorted[2].numbers;
-            
+
             for (let i = 1; i <= 45; i++) {
                 if (r1.includes(i) && r2.includes(i) && r3.includes(i)) {
                     this.excludedNumbers.push(i);
-                    this.scores[i] = 0; 
+                    this.scores[i] = 0;
                 }
             }
         }
@@ -69,7 +69,7 @@ class LottoPredictorV2 {
         for (let i = 1; i <= 45; i++) {
             if (!currentSelection.includes(i) && !this.excludedNumbers.includes(i)) {
                 // Add randomness (0~10) - Increased randomness for variety
-                const w = this.scores[i] + (Math.random() * 10); 
+                const w = this.scores[i] + (Math.random() * 10);
                 pool.push({ num: i, weight: w });
                 totalWeight += w;
             }
@@ -87,7 +87,7 @@ class LottoPredictorV2 {
         // Retry loop
         const MAX_RETRIES = 2000;
         for (let i = 0; i < MAX_RETRIES; i++) {
-            const candidate = this.generateCandidate(); 
+            const candidate = this.generateCandidate();
             if (this.validate(candidate)) {
                 return {
                     numbers: candidate,
@@ -98,8 +98,8 @@ class LottoPredictorV2 {
         // Fallback
         const fallback = this.generateCandidate();
         return {
-             numbers: fallback,
-             analysis: this.analyzeSelection(fallback)
+            numbers: fallback,
+            analysis: this.analyzeSelection(fallback)
         };
     }
 
@@ -115,9 +115,9 @@ class LottoPredictorV2 {
         // 1. Consecutive: Max 2 consecutive (e.g. 11,12 ok. 11,12,13 fail)
         let consecutiveCount = 1;
         let hasConsecutivePair = false;
-        
+
         for (let i = 1; i < numbers.length; i++) {
-            if (numbers[i] === numbers[i-1] + 1) {
+            if (numbers[i] === numbers[i - 1] + 1) {
                 consecutiveCount++;
                 if (consecutiveCount > 2) return false; // Reject 3-consecutive immediately
                 if (consecutiveCount === 2) hasConsecutivePair = true;
@@ -130,22 +130,22 @@ class LottoPredictorV2 {
         // If a consecutive pair exists (e.g. 21, 22), only keep it 30% of the time.
         // This makes "clean" combinations more frequent while maintaining valid probability.
         if (hasConsecutivePair) {
-             if (Math.random() > 0.3) return false; 
+            if (Math.random() > 0.3) return false;
         }
 
         // 2. Odd/Even: Reject 6:0 or 0:6
         const odds = numbers.filter(n => n % 2 !== 0).length;
-        if (odds === 6 || odds === 0) return false; 
+        if (odds === 6 || odds === 0) return false;
 
         // 3. Sum: WIDENED to 80 ~ 200 (was 100~170)
         const sum = numbers.reduce((a, b) => a + b, 0);
         if (sum < 80 || sum > 200) return false;
-        
+
         // 4. History Match: RELAXED (Reject only if EXACT match with past 1st prize)
         // Previously rejected if 5 matches found. Now only 6.
         for (const round of this.history) {
             const matchCount = numbers.filter(n => round.numbers.includes(n)).length;
-            if (matchCount === 6) return false; 
+            if (matchCount === 6) return false;
         }
 
         // 5. AC: >= 5 (Keep)
@@ -154,7 +154,7 @@ class LottoPredictorV2 {
 
         return true;
     }
-    
+
     calculateStats(numbers) {
         const sum = numbers.reduce((a, b) => a + b, 0);
         const diffs = new Set();
@@ -178,15 +178,15 @@ class LottoPredictorV2 {
     }
 
     getScores(numbers) {
-         return numbers.map(n => ({ num: n, score: this.scores[n] ? Math.round(this.scores[n]) : 0 }));
+        return numbers.map(n => ({ num: n, score: this.scores[n] ? Math.round(this.scores[n]) : 0 }));
     }
 
     getAllScores() {
         const all = [];
-        for(let i=1; i<=45; i++) {
+        for (let i = 1; i <= 45; i++) {
             all.push({ num: i, score: this.scores[i] ? Math.round(this.scores[i]) : 0 });
         }
-        return all.sort((a,b) => b.score - a.score);
+        return all.sort((a, b) => b.score - a.score);
     }
 }
 
