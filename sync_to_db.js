@@ -18,32 +18,54 @@ async function sync() {
     const history = JSON.parse(raw);
     
     // Filter relevant rounds (Latest ones first)
-    const targets = history.filter(h => h.drwNo >= 1208); 
-    console.log(`Found ${targets.length} recent rounds to sync.`);
+    const targets = history.filter(h => [1210, 1211].includes(h.drwNo)); 
+    console.log(`Found ${targets.length} rounds to sync (1210, 1211).`);
+
+    console.log(`-- INSERT STATEMENTS FOR 1210, 1211`);
+    console.log(`-- Run this in Supabase SQL Editor to manually fix the missing data`);
+    console.log(``);
 
     for (const round of targets) {
-        console.log(`Syncing Round ${round.drwNo}...`);
+        // SQL string construction
+        const cols = [
+            'drw_no', 'drw_no_date', 'numbers', 'bonus', 
+            'first_win_amnt', 'first_przwner_co', 
+            'second_win_amnt', 'second_przwner_co',
+            'third_win_amnt', 'third_przwner_co',
+            'fourth_win_amnt', 'fourth_przwner_co',
+            'fifth_win_amnt', 'fifth_przwner_co',
+            'total_sell_amnt', 'first_how'
+        ];
         
-        const payload = {
-            drw_no: round.drwNo,
-            drw_date: round.drwNoDate,
-            numbers: round.numbers,
-            bonus: round.bonus,
-            first_win_amnt: round.firstWinamnt,
-            first_przwner_co: round.firstPrzwnerCo,
-            updated_at: new Date()
+        // Escape helper (simple)
+        const fmt = (v) => {
+            if (v === null || v === undefined) return 'NULL';
+            if (typeof v === 'string') return `'${v}'`;
+            if (Array.isArray(v)) return `'${JSON.stringify(v).replace('[','{').replace(']','}')}'`; // Postgres Array format
+            return v;
         };
 
-        const { data, error } = await supabase
-            .from('lotto_history')
-            .upsert(payload, { onConflict: 'drw_no' })
-            .select();
+        const vals = [
+            round.drwNo, 
+            fmt(round.drwNoDate), 
+            fmt(round.numbers), 
+            round.bonus,
+            round.firstWinamnt || 0,
+            round.firstPrzwnerCo || 0,
+            round.secondWinamnt || 0,
+            round.secondPrzwnerCo || 0,
+            round.thirdWinamnt || 0,
+            round.thirdPrzwnerCo || 0,
+            round.fourthWinamnt || 50000,
+            round.fourthPrzwnerCo || 0,
+            round.fifthWinamnt || 5000,
+            round.fifthPrzwnerCo || 0,
+            round.totalSellAmnt || 0,
+            fmt(round.firstHow || '')
+        ];
 
-        if (error) {
-            console.error(`Error syncing ${round.drwNo}:`, error.message);
-        } else {
-            console.log(`Success ${round.drwNo}:`, data);
-        }
+        const sql = `INSERT INTO public.lotto_history (${cols.join(',')}) VALUES (${vals.join(',')}) ON CONFLICT (drw_no) DO UPDATE SET updated_at = now();`;
+        console.log(sql);
     }
 }
 
