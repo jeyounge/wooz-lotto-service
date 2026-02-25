@@ -548,9 +548,11 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         <button className="btn-predict-outline" onClick={() => generateNumbers(true)} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#ff4d4d', color: '#ff4d4d', background: 'rgba(255,0,0,0.05)', padding: '15px' }}>
                             🔥 챌린지 (5-KILL)
                         </button>
+                        {session && session.user?.email === 'jeyounge@nate.com' && (
                             <button className="btn-predict-outline" onClick={handleHiddenPredict} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#00f260', color: '#00f260', background: 'rgba(0,242,96,0.05)', padding: '15px' }}>
                                 🕵️ 히든 예측 (관리자)
                             </button>
+                        )}
                     </div>
                 ) : (
                     <div style={{ 
