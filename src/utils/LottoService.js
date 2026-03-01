@@ -6,17 +6,17 @@ export const LottoService = {
     getExpectedRound: () => {
         const baseRound = 1100;
         const baseDate = new Date('2023-12-30T20:45:00+09:00'); // KST
-        
+
         const now = new Date();
         const diffMs = now - baseDate;
         const diffWeeks = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7));
-        
+
         return baseRound + diffWeeks;
     },
 
     checkUpdateNeeded: (currentLatestRound, history) => {
         const expected = LottoService.getExpectedRound();
-        
+
         if (currentLatestRound >= expected) return false;
 
         const lastAttempt = localStorage.getItem('lastLottoFetchAttempt');
@@ -35,24 +35,25 @@ export const LottoService = {
     fetchRound: async (drwNo) => {
         localStorage.setItem('lastLottoFetchAttempt', Date.now().toString());
         console.log(`[LottoService] Scraping Round ${drwNo} Detail...`);
-        
+
         try {
             // Use local proxy path (configured in vite.config.js and vercel.json)
             // https://data.soledot.com/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
             // -> /api/lotto/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
-            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd?_t=${Date.now()}`;
+            const timeHash = Math.floor(Date.now() / 600000); // 10 minutes cache
+            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd?_t=${timeHash}`;
 
             const controller = new AbortController();
-            const timeoutId = setTimeout(() => controller.abort(), 10000); 
+            const timeoutId = setTimeout(() => controller.abort(), 10000);
 
-            const response = await fetch(url, { 
+            const response = await fetch(url, {
                 signal: controller.signal,
                 cache: 'no-store'
             });
             clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-            
+
             const htmlText = await response.text();
             const parser = new DOMParser();
             const doc = parser.parseFromString(htmlText, 'text/html');
@@ -79,8 +80,8 @@ export const LottoService = {
             });
 
             if (numbers.length === 0) {
-                 console.warn('[LottoService] No numbers found. Page might be empty or restricted.');
-                 return null;
+                console.warn('[LottoService] No numbers found. Page might be empty or restricted.');
+                return null;
             }
 
             // Detailed Stats
@@ -120,7 +121,7 @@ export const LottoService = {
                 bonus,
                 firstWinamnt: ranks[1]?.prize || 0,
                 firstPrzwnerCo: ranks[1]?.count || 0,
-                
+
                 // Detailed Fields for DB
                 totalSellAmnt,
                 firstHow,
