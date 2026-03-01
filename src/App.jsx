@@ -147,7 +147,12 @@ function App() {
             // Normal Merge
             const dbIds = new Set(mappedRounds.map(d => d.drwNo));
             const filtered = prev.filter(d => !dbIds.has(d.drwNo));
-            return [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
+            const merged = [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
+
+            // ALWAYS update the offline cache so we don't start stale next time
+            localStorage.setItem('officialDrawsCache_v3', JSON.stringify(merged));
+
+            return merged;
           });
 
           console.log('[DB] Synced recent rounds from lotto_history:', mappedRounds.map(r => r.drwNo));
