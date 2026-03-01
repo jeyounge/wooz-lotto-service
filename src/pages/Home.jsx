@@ -8,7 +8,7 @@ import '../App.css'
 
 export default function Home({ session, userProfile, pastDraws, handleLogout, refreshProfile }) {
     const navigate = useNavigate()
-  
+
     // --- State Variables ---
     const [numbers, setNumbers] = useState([]);
     const [scores, setScores] = useState([]);
@@ -19,7 +19,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
     // Global Statistics
     const [globalStats, setGlobalStats] = useState({ count: 0, totalPrize: 0, currentRoundCount: 0 });
-    
+
     // Kill Strategy Stats
     const [killStats, setKillStats] = useState(null);
 
@@ -33,8 +33,10 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
     }, [pastDraws]);
 
     const nextRound = useMemo(() => {
-        return lastRound ? lastRound.drwNo + 1 : 1209;
-    }, [lastRound]);
+        // ALWAYS use the absolute latest round in the DB + 1 for predictions.
+        // It doesn't matter if the latest round's prize data is confirmed or not.
+        return pastDraws && pastDraws.length > 0 ? pastDraws[0].drwNo + 1 : 1209;
+    }, [pastDraws]);
 
     // Fetch Global Stats
     useEffect(() => {
@@ -128,15 +130,15 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
     // Check Prediction Status (Time Restrictions)
     useEffect(() => {
         const checkStatus = () => {
-             const status = getPredictionStatus();
-             setPredictionStatus(status);
+            const status = getPredictionStatus();
+            setPredictionStatus(status);
         };
-        
+
         checkStatus(); // Initial check
-        
+
         // Poll every 30 seconds to update status automatically
         const intervalId = setInterval(checkStatus, 30000);
-        
+
         return () => clearInterval(intervalId);
     }, []);
 
@@ -540,135 +542,135 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                             <h2>READY?</h2>
                         </div>
                     )}
-                
-                {predictionStatus.isOpen ? (
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', justifyContent: 'center', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
-                        <button className="btn-predict-outline" onClick={() => generateNumbers(false)} disabled={isAnalyzing} style={{ flex: 1, padding: '15px' }}>
-                            기본 예측 (3-KILL)
-                        </button>
-                        <button className="btn-predict-outline" onClick={() => generateNumbers(true)} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#ff4d4d', color: '#ff4d4d', background: 'rgba(255,0,0,0.05)', padding: '15px' }}>
-                            🔥 챌린지 (5-KILL)
-                        </button>
-                        {session && ['jeyounge@nate.com', 'pjhee9035@naver.com', 'fc6443@hanmail.net'].includes(session.user?.email) && (
-                            <button className="btn-predict-outline" onClick={handleHiddenPredict} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#00f260', color: '#00f260', background: 'rgba(0,242,96,0.05)', padding: '15px' }}>
-                                🕵️ 히든 예측 (관리자)
+
+                    {predictionStatus.isOpen ? (
+                        <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', justifyContent: 'center', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
+                            <button className="btn-predict-outline" onClick={() => generateNumbers(false)} disabled={isAnalyzing} style={{ flex: 1, padding: '15px' }}>
+                                기본 예측 (3-KILL)
                             </button>
+                            <button className="btn-predict-outline" onClick={() => generateNumbers(true)} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#ff4d4d', color: '#ff4d4d', background: 'rgba(255,0,0,0.05)', padding: '15px' }}>
+                                🔥 챌린지 (5-KILL)
+                            </button>
+                            {session && ['jeyounge@nate.com', 'pjhee9035@naver.com', 'fc6443@hanmail.net'].includes(session.user?.email) && (
+                                <button className="btn-predict-outline" onClick={handleHiddenPredict} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#00f260', color: '#00f260', background: 'rgba(0,242,96,0.05)', padding: '15px' }}>
+                                    🕵️ 히든 예측 (관리자)
+                                </button>
+                            )}
+                        </div>
+                    ) : (
+                        <div style={{
+                            margin: '20px auto',
+                            padding: '20px',
+                            background: 'rgba(255, 77, 77, 0.1)',
+                            border: '1px solid rgba(255, 77, 77, 0.3)',
+                            borderRadius: '12px',
+                            textAlign: 'center',
+                            maxWidth: '400px',
+                            color: '#ff6b6b'
+                        }}>
+                            <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⏳</div>
+                            <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>예측 시스템 일시 중지</h3>
+                            <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
+                                {predictionStatus.message}
+                            </p>
+                        </div>
+                    )}
+                </section>
+
+                <section className="analysis-card">
+                    <div className="card-header">
+                        <h3>📊 예측 분석 리포트</h3>
+                    </div>
+
+                    {numbers.length > 0 ? (
+                        <ul className="analysis-list fade-in">
+                            {analysis.map((text, i) => <li key={i}>{text}</li>)}
+                        </ul>
+                    ) : (
+                        <div className="analysis-placeholder">
+                            <p>번호를 예측하거나 기록을 선택하면 분석 결과가 표시됩니다.</p>
+                        </div>
+                    )}
+
+                    <div className="weight-grid-section">
+                        <h4>📋 전체 번호별 가중치 점수 (Top 45)</h4>
+                        <div className="weight-grid">
+                            {allWeights.map((item) => (
+                                <div key={item.num} className={`weight-box ball-${getBallColor(item.num)}`}>
+                                    <span className="wb-num">{item.num}</span>
+                                    <span className="wb-score">{item.score}</span>
+                                </div>
+                            ))}
+                        </div>
+                    </div>
+                </section>
+            </main>
+
+            {/* Sidebar */}
+            <aside className="history-floating-banner">
+                <div className="history-panel">
+                    <div className="auth-section">
+                        {session ? (
+                            <div style={{ padding: '20px', background: 'rgba(5, 117, 230, 0.1)', borderRadius: '12px', border: '1px solid rgba(5, 117, 230, 0.3)', textAlign: 'center' }}>
+                                <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>
+                                    👋 <span style={{ color: '#00f260' }}>{userProfile?.nickname || '사용자'}</span>님!
+                                </h3>
+                                <button onClick={handleLogout} style={{ padding: '8px 16px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
+                                    로그아웃
+                                </button>
+                                <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
+                                    <button
+                                        onClick={() => navigate('/mypage')}
+                                        style={{ background: 'transparent', border: 'none', color: '#0575e6', cursor: 'pointer', fontWeight: 'bold' }}
+                                    >
+                                        📂 내 예측 보기
+                                    </button>
+                                    <button
+                                        onClick={() => navigate('/results')}
+                                        style={{ background: 'transparent', border: 'none', color: '#ffd700', cursor: 'pointer', fontWeight: 'bold', marginLeft: '10px' }}
+                                    >
+                                        🏆 명예의 전당
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div style={{ padding: '20px', background: 'rgba(5, 117, 230, 0.1)', borderRadius: '12px', border: '1px solid rgba(5, 117, 230, 0.3)', textAlign: 'center' }}>
+                                <Auth onLoginSuccess={refreshProfile} />
+                            </div>
                         )}
                     </div>
-                ) : (
-                    <div style={{ 
-                        margin: '20px auto', 
-                        padding: '20px', 
-                        background: 'rgba(255, 77, 77, 0.1)', 
-                        border: '1px solid rgba(255, 77, 77, 0.3)', 
-                        borderRadius: '12px', 
-                        textAlign: 'center',
-                        maxWidth: '400px',
-                        color: '#ff6b6b'
-                    }}>
-                        <div style={{ fontSize: '2rem', marginBottom: '10px' }}>⏳</div>
-                        <h3 style={{ margin: '0 0 10px 0', fontSize: '1.2rem' }}>예측 시스템 일시 중지</h3>
-                        <p style={{ margin: 0, fontSize: '0.9rem', lineHeight: '1.5' }}>
-                            {predictionStatus.message}
-                        </p>
-                    </div>
-                )}
-            </section>
-            
-            <section className="analysis-card">
-                <div className="card-header">
-                    <h3>📊 예측 분석 리포트</h3>
-                </div>
-                
-                {numbers.length > 0 ? (
-                    <ul className="analysis-list fade-in">
-                        {analysis.map((text, i) => <li key={i}>{text}</li>)}
-                    </ul>
-                ) : (
-                    <div className="analysis-placeholder">
-                        <p>번호를 예측하거나 기록을 선택하면 분석 결과가 표시됩니다.</p>
-                    </div>
-                )}
 
-                <div className="weight-grid-section">
-                    <h4>📋 전체 번호별 가중치 점수 (Top 45)</h4>
-                    <div className="weight-grid">
-                        {allWeights.map((item) => (
-                            <div key={item.num} className={`weight-box ball-${getBallColor(item.num)}`}>
-                                <span className="wb-num">{item.num}</span>
-                                <span className="wb-score">{item.score}</span>
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-        </main>
-
-        {/* Sidebar */}
-        <aside className="history-floating-banner">
-             <div className="history-panel">
-                <div className="auth-section">
-                    {session ? (
-                        <div style={{ padding: '20px', background: 'rgba(5, 117, 230, 0.1)', borderRadius: '12px', border: '1px solid rgba(5, 117, 230, 0.3)', textAlign: 'center' }}>
-                            <h3 style={{ margin: '0 0 10px 0', color: '#fff' }}>
-                                👋 <span style={{ color: '#00f260' }}>{userProfile?.nickname || '사용자'}</span>님!
-                            </h3>
-                            <button onClick={handleLogout} style={{ padding: '8px 16px', background: '#333', color: '#fff', border: '1px solid #555', borderRadius: '6px', cursor: 'pointer', fontSize: '12px' }}>
-                                로그아웃
-                            </button>
-                            <div style={{ marginTop: '15px', paddingTop: '15px', borderTop: '1px solid rgba(255,255,255,0.1)' }}>
-                                <button 
-                                    onClick={() => navigate('/mypage')}
-                                    style={{ background: 'transparent', border:'none', color:'#0575e6', cursor:'pointer', fontWeight:'bold' }}
-                                >
-                                    📂 내 예측 보기
-                                </button>
-                                <button 
-                                    onClick={() => navigate('/results')}
-                                    style={{ background: 'transparent', border:'none', color:'#ffd700', cursor:'pointer', fontWeight:'bold', marginLeft: '10px' }}
-                                >
-                                    🏆 명예의 전당
-                                </button>
-                            </div>
-                        </div>
-                    ) : (
-                        <div style={{ padding: '20px', background: 'rgba(5, 117, 230, 0.1)', borderRadius: '12px', border: '1px solid rgba(5, 117, 230, 0.3)', textAlign: 'center' }}>
-                            <Auth onLoginSuccess={refreshProfile} />
-                        </div>
-                    )}
-                </div>
-
-                <h3 className="panel-title">📜 Recent ({history.filter(h => h.round === nextRound).length})</h3>
-                <div className="history-list">
-                    {history.filter(h => h.round === nextRound).length === 0 ? (
-                        <div className="empty-state">이번 회차({nextRound}회) 예측이 없습니다.</div>
-                    ) : (
-                        history.filter(h => h.round === nextRound).map((item) => (
-                            <div key={item.id} className={`history-item ${selectedId === item.id ? 'active' : ''} ${item.is_hidden ? 'hidden-item' : ''}`} onClick={() => loadHistoryItem(item)} style={item.is_hidden ? {borderLeft: '3px solid #b33939', background: 'rgba(50, 20, 20, 0.3)'} : {}}>
-                                <div className="history-header">
-                                    <span className="history-round">
-                                        {item.is_hidden && <span style={{marginRight:'5px'}}>🕵️</span>}
-                                        {item.round ? `${item.round}회차` : '예측'}
-                                    </span>
-                                    <span className="history-date">{item.date}</span>
+                    <h3 className="panel-title">📜 Recent ({history.filter(h => h.round === nextRound).length})</h3>
+                    <div className="history-list">
+                        {history.filter(h => h.round === nextRound).length === 0 ? (
+                            <div className="empty-state">이번 회차({nextRound}회) 예측이 없습니다.</div>
+                        ) : (
+                            history.filter(h => h.round === nextRound).map((item) => (
+                                <div key={item.id} className={`history-item ${selectedId === item.id ? 'active' : ''} ${item.is_hidden ? 'hidden-item' : ''}`} onClick={() => loadHistoryItem(item)} style={item.is_hidden ? { borderLeft: '3px solid #b33939', background: 'rgba(50, 20, 20, 0.3)' } : {}}>
+                                    <div className="history-header">
+                                        <span className="history-round">
+                                            {item.is_hidden && <span style={{ marginRight: '5px' }}>🕵️</span>}
+                                            {item.round ? `${item.round}회차` : '예측'}
+                                        </span>
+                                        <span className="history-date">{item.date}</span>
+                                    </div>
+                                    <div className="history-numbers">
+                                        {item.numbers.map((num, idx) => (
+                                            <span key={idx} className={`ball ball-${Math.ceil(num / 10)} small`}>{num}</span>
+                                        ))}
+                                    </div>
+                                    {item.is_challenge && <div style={{ fontSize: '0.7rem', color: '#ff4d4d', marginTop: '4px', display: 'flex', alignItems: 'center', gap: '2px' }}>🔥 Challenge</div>}
+                                    {item.is_hidden && <div style={{ fontSize: '0.7rem', color: '#ccc', marginTop: '4px' }}>{item.analysis?.strategy || 'Hidden'}</div>}
                                 </div>
-                                <div className="history-numbers">
-                                    {item.numbers.map((num, idx) => (
-                                        <span key={idx} className={`ball ball-${Math.ceil(num / 10)} small`}>{num}</span>
-                                    ))}
-                                </div>
-                                {item.is_challenge && <div style={{ fontSize: '0.7rem', color: '#ff4d4d', marginTop: '4px', display:'flex', alignItems:'center', gap:'2px' }}>🔥 Challenge</div>}
-                                {item.is_hidden && <div style={{ fontSize: '0.7rem', color: '#ccc', marginTop: '4px' }}>{item.analysis?.strategy || 'Hidden'}</div>}
-                            </div>
-                        ))
-                    )}
+                            ))
+                        )}
+                    </div>
+                    <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', fontSize: '0.75rem', color: '#666' }}>
+                        © 2026 Lotto Z. <br />
+                        <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
+                    </div>
                 </div>
-                <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', fontSize: '0.75rem', color: '#666' }}>
-                    © 2026 Lotto Z. <br/>
-                    <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
-                </div>
-            </div>
-        </aside>
-    </div>
+            </aside>
+        </div>
     )
 }
