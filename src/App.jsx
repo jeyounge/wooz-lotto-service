@@ -128,12 +128,28 @@ function App() {
             fifthPrzwnerCo: r.fifth_przwner_co,
           }));
 
-          // Merge: DB data takes precedence over JSON for recent rounds
           setPastDraws(prev => {
+            const dbHighest = Math.max(...mappedRounds.map(r => r.drwNo));
+            const prevHighest = prev.length > 0 ? Math.max(...prev.map(r => r.drwNo)) : 0;
+
+            // CRITICAL MOBILE CACHE FIX: DB is source of truth.
+            // If DB knows about a newer round than our local state (localStorage),
+            // BURN the local cache and rebuild from scratch.
+            if (dbHighest > prevHighest) {
+              console.warn(`[Sync] Stale cache detected. DB: ${dbHighest} > Local: ${prevHighest}. Wiping local storage.`);
+              localStorage.removeItem('officialDrawsCache_v3');
+
+              const dbIds = new Set(mappedRounds.map(d => d.drwNo));
+              const filteredInitial = initialLottoHistory.filter(d => !dbIds.has(d.drwNo));
+              return [...mappedRounds, ...filteredInitial].sort((a, b) => b.drwNo - a.drwNo);
+            }
+
+            // Normal Merge
             const dbIds = new Set(mappedRounds.map(d => d.drwNo));
             const filtered = prev.filter(d => !dbIds.has(d.drwNo));
             return [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
           });
+
           console.log('[DB] Synced recent rounds from lotto_history:', mappedRounds.map(r => r.drwNo));
         }
       } catch (e) {
