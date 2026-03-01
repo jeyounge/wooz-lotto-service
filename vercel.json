@@ -1,7 +1,44 @@
 {
+  "headers": [
+    {
+      "source": "/(.*\\.html)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=0, no-cache, no-store, must-revalidate"
+        },
+        {
+          "key": "Pragma",
+          "value": "no-cache"
+        },
+        {
+          "key": "Expires",
+          "value": "0"
+        }
+      ]
+    },
+    {
+      "source": "/api/(.*)",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "s-maxage=0, no-cache, no-store, must-revalidate"
+        }
+      ]
+    }
+  ],
   "rewrites": [
-    { "source": "/api/lotto/:path*", "destination": "https://data.soledot.com/:path*" },
-    { "source": "/api/ugcr/:path*", "destination": "https://ugcr.soledot.com/:path*" },
-    { "source": "/(.*)", "destination": "/index.html" }
+    {
+      "source": "/api/lotto/:path*",
+      "destination": "https://data.soledot.com/:path*"
+    },
+    {
+      "source": "/api/ugcr/:path*",
+      "destination": "https://ugcr.soledot.com/:path*"
+    },
+    {
+      "source": "/(.*)",
+      "destination": "/index.html"
+    }
   ]
 }

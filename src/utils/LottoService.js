@@ -40,12 +40,15 @@ export const LottoService = {
             // Use local proxy path (configured in vite.config.js and vercel.json)
             // https://data.soledot.com/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
             // -> /api/lotto/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
-            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd`;
+            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd?_t=${Date.now()}`;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000); 
 
-            const response = await fetch(url, { signal: controller.signal });
+            const response = await fetch(url, { 
+                signal: controller.signal,
+                cache: 'no-store'
+            });
             clearTimeout(timeoutId);
 
             if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
