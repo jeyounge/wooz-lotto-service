@@ -609,6 +609,33 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         </div>
                     </div>
                 </section>
+
+                {/* ADSENSE CONTENT ENRICHMENT: Detailed Guide Section */}
+                <section className="guide-card" style={{ margin: '0 20px 20px', padding: '25px', background: '#1c1c1c', borderRadius: '16px', border: '1px solid #333', color: '#ddd', lineHeight: '1.6' }}>
+                    <h2 style={{ color: '#ffd700', fontSize: '1.4rem', marginBottom: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
+                        💡 로또 Z 인공지능 예측 시스템 가이드
+                    </h2>
+
+                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. 3-KILL 전략 (기본 예측)</h3>
+                    <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
+                        단순히 운에 의존하는 것을 넘어, 철저한 통계적 배제 원칙을 적용합니다. <strong>3-KILL 전략</strong>은 과거 수백 회차의 데이터를 기반으로 당첨 확률이 현저히 떨어지는 3개의 고정 번호를 수학적으로 필터링하여 예측 풀에서 영구 제외하는 로또 Z만의 독자적인 핵심 기술입니다. 최근 5주간 가장 뜨거웠던 끝수(Hot Digit)를 분석하고, 그중에서도 힘이 빠진 미지근한 숫자들을 우선 타겟팅합니다. 또한 3주 연속으로 등장한 패턴 번호나 직전 회차의 보너스 번호 등, 통계적으로 연속 출현 확률이 5% 미만인 번호들을 정밀하게 타격하여 100% 제외(KILL) 처리합니다. 이 기본 제외 전략만으로도 기존 무작위 추출 대비 엄청난 경우의 수 단축 효과를 얻을 수 있습니다.
+                    </p>
+
+                    <h3 style={{ color: '#ff4d4d', fontSize: '1.1rem', marginTop: '20px' }}>2. 5-KILL 전략 (🔥 챌린지 모드)</h3>
+                    <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
+                        보다 공격적인 확률 싸움을 원하시는 분들을 위한 하이리스크-하이리턴 모드입니다. 3-KILL 기본 배제 번호에 더해, 최근 10주간 단 한 번도 출현하지 않으면서 동시에 주변 동반 출현(이웃수) 빈도마저 완전히 바닥을 치고 있는 최악의 <strong>콜드 넘버(Coldest Numbers)</strong> 2개를 찾아내어 추가로 날려버립니다. 총 5개의 숫자를 완벽히 배제한 상태로 남은 40개의 최정예 숫자들 사이에서만 스코어링을 진행하므로, 알고리즘 체감 적중률이 극대화되는 것을 경험하실 수 있습니다!
+                    </p>
+
+                    <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>3. 빅데이터 기반 스코어링 분석</h3>
+                    <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
+                        로또 Z의 AI 모델은 동행복권의 역대 모든 당첨 번호를 실시간으로 동기화하여 수천 가지 패턴을 점수화(Scoring)합니다. 앞서 킬(Kill) 기법으로 제외된 번호들을 뺀 나머지 40여 개의 후보군 각각에 대해 "최근 5주 출현 빈도", "최근 10주 출현 빈도", "직전 회차 중심 이웃수(Neighbor) 연관성", "모서리/중앙/십자 배치 패턴" 등 10가지 이상의 복합 가중치를 부여합니다. 결과적으로 화면에 표시된 6개의 추천 번호는 단순 난수가 아니라, 우리 시스템이 현재 데이터 흐름상 <strong>가장 추천할 만한 가치가 높다</strong>고 판단하여 선별해낸 최고의 가중치 조합입니다.
+                    </p>
+
+                    <div style={{ background: 'rgba(5, 117, 230, 0.1)', border: '1px solid rgba(5, 117, 230, 0.3)', padding: '15px', borderRadius: '8px', marginTop: '25px', fontSize: '0.85rem' }}>
+                        * 로또 Z는 사용자의 당첨을 보장하지 않으며, 모든 예측 조합은 통계 기반의 확률적 결과물일 뿐 참고 용도로만 활용하시기 바랍니다.
+                        빅데이터가 추천하는 이 주의 황금 번호 라인업으로 여러분의 행운을 극대화해 보세요! 🍀
+                    </div>
+                </section>
             </main>
 
             {/* Sidebar */}
