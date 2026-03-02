@@ -100,7 +100,14 @@ function App() {
           .order('drw_no', { ascending: false })
           .limit(5);
 
+        let latestKnownRound = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
+
         if (!dbErr && dbRounds && dbRounds.length > 0) {
+          const dbHighest = Math.max(...dbRounds.map(r => r.drw_no));
+          if (dbHighest > latestKnownRound) {
+            latestKnownRound = dbHighest;
+          }
+
           // Convert snake_case DB fields to camelCase for frontend
           const mappedRounds = dbRounds.map(r => ({
             drwNo: r.drw_no,
@@ -155,8 +162,7 @@ function App() {
       }
 
       // 2. Check if new round is available from scraping
-      const currentLatestDraw = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
-      const neededRound = LottoService.checkUpdateNeeded(currentLatestDraw);
+      const neededRound = LottoService.checkUpdateNeeded(latestKnownRound);
 
       if (neededRound) {
         console.log(`Getting update for round ${neededRound}...`);
