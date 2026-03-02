@@ -92,6 +92,7 @@ function App() {
   // --- Auto-Update Official Draws ---
   useEffect(() => {
     const checkForUpdates = async () => {
+      let latestKnownRound = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
       // 1. First, try to sync recent rounds from DB (source of truth)
       try {
         const { data: dbRounds, error: dbErr } = await supabase
@@ -99,8 +100,6 @@ function App() {
           .select('drw_no, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
           .order('drw_no', { ascending: false })
           .limit(5);
-
-        let latestKnownRound = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
 
         if (!dbErr && dbRounds && dbRounds.length > 0) {
           const dbHighest = Math.max(...dbRounds.map(r => r.drw_no));
