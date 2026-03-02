@@ -399,6 +399,15 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                 <span className="winner-count">1등 당첨자: <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : '집계 중'}</strong></span>
                                 <span className="prize-amt">당첨금: <strong>{lastRound.firstWinamnt > 0 ? `₩${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}` : '집계 중'}</strong></span>
                             </div>
+
+                            {/* SEO & AD BOT DYNAMIC CONTENT: Weekly text summary rendered without clicks */}
+                            <div className="seo-dynamic-report" style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', textAlign: 'left' }}>
+                                <strong style={{ color: '#fff', display: 'block', marginBottom: '8px' }}>📊 {lastRound.drwNo}회차 데이터 분석 브리핑</strong>
+                                최근 진행된 {lastRound.drwNo}회 추첨 결과, 당첨 번호는 <strong>{lastRound.numbers.join(', ')}</strong> 번이고 보너스 번호는 <strong>{lastRound.bonus}</strong> 번이 등장했습니다.
+                                이번 회차에서는 총 <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : 'N명'}</strong>의 1등 당첨자가 배출되어 각각 약 <strong>{lastRound.firstWinamnt > 0 ? `${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}원` : '집계 중'}</strong>의 당첨금을 수령하게 되었습니다.
+                                로또 Z의 빅데이터 AI 엔진은 즉각적으로 {lastRound.drwNo}회차 당첨 결과의 모서리 패턴, 끝수 분포 빈도, 콜드 넘버(장기 미출현) 해소 여부 등의 심층 통계 데이터를 메인 DB에 성공적으로 학습 완료했습니다.
+                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 3-KILL 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
+                            </div>
                         </div>
                     )}
                 </section>
