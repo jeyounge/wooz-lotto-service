@@ -12,12 +12,12 @@ class LottoPredictorV3 extends LottoPredictorV2 {
         if (!this.history || this.history.length < 15) return;
 
         // Sort: 0 is Latest
-        const sorted = [...this.history].sort((a,b) => b.drwNo - a.drwNo);
+        const sorted = [...this.history].sort((a, b) => b.drwNo - a.drwNo);
         const kills = new Set();
         const killReasons = {};
 
         const addKill = (num, reason) => {
-            if (kills.size >= this.killCount) return; 
+            if (kills.size >= this.killCount) return;
             if (!kills.has(num)) {
                 kills.add(num);
                 killReasons[num] = reason;
@@ -26,12 +26,12 @@ class LottoPredictorV3 extends LottoPredictorV2 {
 
         // --- Priority 1: 3-Consecutive OR Max Freq in Last 10 Weeks ---
         let p1Found = false;
-        
+
         // A. Check 3-Consecutive
         const r0 = sorted[0].numbers;
         const r1 = sorted[1].numbers;
         const r2 = sorted[2].numbers;
-        
+
         for (let i = 1; i <= 45; i++) {
             if (r0.includes(i) && r1.includes(i) && r2.includes(i)) {
                 addKill(i, "3-Consecutive (3주 연속 출현)");
@@ -39,13 +39,13 @@ class LottoPredictorV3 extends LottoPredictorV2 {
                 break;
             }
         }
-        
+
         // B. Fallback: Max Freq in Last 10 Weeks
         // Prepare counts for 10 weeks regardless (needed for fillers later)
         const last10 = sorted.slice(0, 10);
         const counts10 = {};
-        last10.forEach(r => r.numbers.forEach(n => counts10[n] = (counts10[n]||0) + 1));
-        
+        last10.forEach(r => r.numbers.forEach(n => counts10[n] = (counts10[n] || 0) + 1));
+
         const hotSorted10 = Object.entries(counts10)
             .sort((a, b) => b[1] - a[1] || b[0] - a[0]) // Count Desc
             .map(x => parseInt(x[0]));
@@ -80,24 +80,25 @@ class LottoPredictorV3 extends LottoPredictorV2 {
 
             // Find hottest digit
             const hottestDigit = Object.entries(digitsCount)
-                .sort((a,b) => b[1] - a[1])[0]; // [digit, count]
-            
+                .sort((a, b) => parseInt(a[0]) - parseInt(b[0])) // Tie-breaker for keys
+                .sort((a, b) => b[1] - a[1] || parseInt(a[0]) - parseInt(b[0]))[0]; // [digit, count]
+
             if (hottestDigit) {
                 const targetDigit = parseInt(hottestDigit[0]);
-                
+
                 // Get all numbers with this digit (e.g., 1, 11, 21, 31, 41)
                 const candidates = [];
-                for(let i=1; i<=45; i++) {
+                for (let i = 1; i <= 45; i++) {
                     if (i % 10 === targetDigit) candidates.push(i);
                 }
 
                 // Find the one that appeared LEAST in last 5 weeks
                 // Sort by Count Ascending
-                candidates.sort((a,b) => (numCounts[a]||0) - (numCounts[b]||0));
+                candidates.sort((a, b) => (numCounts[a] || 0) - (numCounts[b] || 0) || a - b);
 
                 for (const cand of candidates) {
-                     addKill(cand, `Weakest of Hot Digit ${targetDigit} (끝수법칙)`);
-                     if (kills.size >= 3) break; // Basic 3-Kill Limit Logic (Keep this soft limit for base logic)
+                    addKill(cand, `Weakest of Hot Digit ${targetDigit} (끝수법칙)`);
+                    if (kills.size >= 3) break; // Basic 3-Kill Limit Logic (Keep this soft limit for base logic)
                 }
             }
         }
@@ -110,23 +111,23 @@ class LottoPredictorV3 extends LottoPredictorV2 {
         const r0_nums = sorted[0].numbers;
         const neighbors = new Set();
         r0_nums.forEach(n => {
-            if (n-1 >= 1) neighbors.add(n-1);
-            if (n+1 <= 45) neighbors.add(n+1);
+            if (n - 1 >= 1) neighbors.add(n - 1);
+            if (n + 1 <= 45) neighbors.add(n + 1);
         });
         const neighborList = Array.from(neighbors);
 
         // Calculate 5-week freq for these neighbors
         const last5 = sorted.slice(0, 5);
         const counts5 = {};
-        last5.forEach(r => r.numbers.forEach(n => counts5[n] = (counts5[n]||0) + 1));
+        last5.forEach(r => r.numbers.forEach(n => counts5[n] = (counts5[n] || 0) + 1));
 
-        const sortedNeighbors = neighborList.sort((a,b) => (counts5[b]||0) - (counts5[a]||0)); // Descending
+        const sortedNeighbors = neighborList.sort((a, b) => (counts5[b] || 0) - (counts5[a] || 0) || a - b); // Descending with Tie-breaker
 
         if (sortedNeighbors.length > 0) {
             const bestNeighbor = sortedNeighbors[0];
             const reason = `🔥 Hot Neighbor (최근 5주 과열 이웃수)`;
             this.extraKillCandidates.push({ num: bestNeighbor, reason });
-            
+
             // Only Apply if Challenge Mode (killCount >= 4)
             if (this.killCount >= 5) {
                 addKill(bestNeighbor, reason);
@@ -136,25 +137,25 @@ class LottoPredictorV3 extends LottoPredictorV2 {
         // 5. Hot Carryover Kill (Last Week's Number with Highest 10-Week Freq)
         // We already have hotSorted10 (all numbers sorted by 10-week freq)
         const hotCarryovers = hotSorted10.filter(n => r0_nums.includes(n));
-        
-        if (hotCarryovers.length > 0) {
-                const bestCarryover = hotCarryovers[0];
-                const reason = `🔥 Hot Carryover (최근 10주 과열 이월수)`;
-                this.extraKillCandidates.push({ num: bestCarryover, reason });
 
-                // Only Apply if Challenge Mode (killCount >= 5)
-                if (this.killCount >= 5) {
-                    addKill(bestCarryover, reason);
-                }
+        if (hotCarryovers.length > 0) {
+            const bestCarryover = hotCarryovers[0];
+            const reason = `🔥 Hot Carryover (최근 10주 과열 이월수)`;
+            this.extraKillCandidates.push({ num: bestCarryover, reason });
+
+            // Only Apply if Challenge Mode (killCount >= 5)
+            if (this.killCount >= 5) {
+                addKill(bestCarryover, reason);
+            }
         }
-        
+
         // --- Filler: If still not enough, pick Next Hottest from 10-week stats ---
         if (kills.size < this.killCount) {
-             let hotIdx = 0;
-             while (kills.size < this.killCount && hotIdx < hotSorted10.length) {
-                 const cand = hotSorted10[hotIdx++];
-                 addKill(cand, `Fallback Hot 10 (${counts10[cand]}회)`);
-             }
+            let hotIdx = 0;
+            while (kills.size < this.killCount && hotIdx < hotSorted10.length) {
+                const cand = hotSorted10[hotIdx++];
+                addKill(cand, `Fallback Hot 10 (${counts10[cand]}회)`);
+            }
         }
 
         // Apply
@@ -163,7 +164,7 @@ class LottoPredictorV3 extends LottoPredictorV2 {
             if (!this.excludedNumbers.includes(k)) {
                 this.excludedNumbers.push(k);
             }
-            this.scores[k] = -9999; 
+            this.scores[k] = -9999;
         });
 
         this.killReasons = killReasons;

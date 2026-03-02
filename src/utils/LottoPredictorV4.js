@@ -13,7 +13,7 @@ class LottoPredictorV4 extends LottoPredictorV2 {
         if (!this.history || this.history.length < 15) return;
 
         // Sort: 0 is Latest
-        const sorted = [...this.history].sort((a,b) => b.drwNo - a.drwNo);
+        const sorted = [...this.history].sort((a, b) => b.drwNo - a.drwNo);
         const kills = new Set();
         const killReasons = {};
 
@@ -21,12 +21,12 @@ class LottoPredictorV4 extends LottoPredictorV2 {
         // Returns true if number appeared >= 3 times in last 10 weeks
         const last10 = sorted.slice(0, 10);
         const counts10 = {};
-        last10.forEach(r => r.numbers.forEach(n => counts10[n] = (counts10[n]||0) + 1));
-        
+        last10.forEach(r => r.numbers.forEach(n => counts10[n] = (counts10[n] || 0) + 1));
+
         const isHot = (num) => (counts10[num] || 0) >= 3;
 
         const addKill = (num, reason) => {
-            if (kills.size >= this.killCount) return; 
+            if (kills.size >= this.killCount) return;
             if (!kills.has(num)) {
                 kills.add(num);
                 killReasons[num] = reason;
@@ -39,11 +39,11 @@ class LottoPredictorV4 extends LottoPredictorV2 {
         const r0 = sorted[0].numbers;
         const r1 = sorted[1].numbers;
         const r2 = sorted[2].numbers;
-        
+
         for (let i = 1; i <= 45; i++) {
             if (r0.includes(i) && r1.includes(i) && r2.includes(i)) {
                 addKill(i, "3-Consecutive (3주 연속 출현 - 패턴 필살)");
-                break; 
+                break;
             }
         }
 
@@ -61,9 +61,9 @@ class LottoPredictorV4 extends LottoPredictorV2 {
         // Only if we haven't reached kill count
         if (kills.size < this.killCount) {
             const last5 = sorted.slice(0, 5);
-            const digitsCount = {}; 
+            const digitsCount = {};
             const numCounts = {};
-            
+
             last5.forEach(r => {
                 r.numbers.forEach(n => {
                     const digit = n % 10;
@@ -73,27 +73,29 @@ class LottoPredictorV4 extends LottoPredictorV2 {
             });
 
             // Find hottest digit
-            const hottestDigitEntry = Object.entries(digitsCount).sort((a,b) => b[1] - a[1])[0];
-            
+            const hottestDigitEntry = Object.entries(digitsCount)
+                .sort((a, b) => parseInt(a[0]) - parseInt(b[0])) // Pre-sort keys to guarantee stable tie-breaking later
+                .sort((a, b) => b[1] - a[1] || parseInt(a[0]) - parseInt(b[0]))[0];
+
             if (hottestDigitEntry) {
                 const targetDigit = parseInt(hottestDigitEntry[0]);
-                
+
                 // Candidates: Numbers with this digit
                 const candidates = [];
-                for(let i=1; i<=45; i++) {
+                for (let i = 1; i <= 45; i++) {
                     if (i % 10 === targetDigit) candidates.push(i);
                 }
 
                 // Sort by Frequency Asc (Weakest first)
-                candidates.sort((a,b) => (numCounts[a]||0) - (numCounts[b]||0));
+                candidates.sort((a, b) => (numCounts[a] || 0) - (numCounts[b] || 0) || a - b);
 
                 for (const cand of candidates) {
                     // CRITICAL CHANGE: Check Safety Valve
                     if (isHot(cand)) {
                         console.log(`[V4] Saved Hot Number ${cand} from execution (Digit Rule)`);
-                        continue; 
+                        continue;
                     }
-                    
+
                     addKill(cand, `Weakest of Hot Digit ${targetDigit} (안전장치 통과)`);
                     if (kills.size >= this.killCount) break;
                 }
@@ -104,19 +106,19 @@ class LottoPredictorV4 extends LottoPredictorV2 {
         // If still need kills, pick from Coldest (Lowest freq in last 10)
         // MUST NOT BE HOT (Redundant check but safe)
         if (kills.size < this.killCount) {
-             const allNums = Array.from({length: 45}, (_, i) => i + 1);
-             // Sort by Freq Ascending (Coldest first)
-             allNums.sort((a,b) => (counts10[a]||0) - (counts10[b]||0));
-             
-             for (const cand of allNums) {
-                 if (isHot(cand)) continue; // Skip hot ones (obviously)
-                 
-                 // Also avoid neighbors of last round? (Optional, but let's keep it simple)
-                 // Just kill the coldest one that isn't hot.
-                 
-                 addKill(cand, `Coldest Number (최근 10주 ${counts10[cand]||0}회)`);
-                 if (kills.size >= this.killCount) break;
-             }
+            const allNums = Array.from({ length: 45 }, (_, i) => i + 1);
+            // Sort by Freq Ascending (Coldest first)
+            allNums.sort((a, b) => (counts10[a] || 0) - (counts10[b] || 0) || a - b);
+
+            for (const cand of allNums) {
+                if (isHot(cand)) continue; // Skip hot ones (obviously)
+
+                // Also avoid neighbors of last round? (Optional, but let's keep it simple)
+                // Just kill the coldest one that isn't hot.
+
+                addKill(cand, `Coldest Number (최근 10주 ${counts10[cand] || 0}회)`);
+                if (kills.size >= this.killCount) break;
+            }
         }
 
         // Apply
@@ -125,7 +127,7 @@ class LottoPredictorV4 extends LottoPredictorV2 {
             if (!this.excludedNumbers.includes(k)) {
                 this.excludedNumbers.push(k);
             }
-            this.scores[k] = -9999; 
+            this.scores[k] = -9999;
         });
 
         this.killReasons = killReasons;
