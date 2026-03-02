@@ -89,7 +89,7 @@ function App() {
       try {
         const { data: dbRounds, error: dbErr } = await supabase
           .from('lotto_history')
-          .select('drw_no, drw_no_date, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
+          .select('drw_no, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
           .order('drw_no', { ascending: false })
           .limit(5);
 
@@ -172,7 +172,7 @@ function App() {
           try {
             const dbPayload = {
               drw_no: newDrawRecord.drwNo,
-              drw_no_date: newDrawRecord.drwNoDate,
+              // drw_no_date: newDrawRecord.drwNoDate, // Removed because it's not in DB Schema
               numbers: newDrawRecord.numbers,
               bonus: newDrawRecord.bonus,
               first_win_amnt: newDrawRecord.firstWinamnt,
@@ -185,8 +185,8 @@ function App() {
               fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
               fifth_win_amnt: newDrawRecord.fifthWinamnt,
               fifth_przwner_co: newDrawRecord.fifthPrzwnerCo,
-              total_sell_amnt: newDrawRecord.totalSellAmnt,
-              first_how: newDrawRecord.firstHow,
+              // total_sell_amnt: newDrawRecord.totalSellAmnt, // Removed
+              // first_how: newDrawRecord.firstHow, // Removed
             };
 
             const { error: dbErr } = await supabase
