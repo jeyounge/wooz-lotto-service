@@ -97,7 +97,7 @@ function App() {
           // Convert snake_case DB fields to camelCase for frontend
           const mappedRounds = dbRounds.map(r => ({
             drwNo: r.drw_no,
-            drwNoDate: r.drw_no_date,
+            drwNoDate: LottoService.getExpectedDate(r.drw_no),
             numbers: r.numbers,
             bonus: r.bonus,
             firstWinamnt: r.first_win_amnt,

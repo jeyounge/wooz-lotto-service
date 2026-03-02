@@ -14,6 +14,15 @@ export const LottoService = {
         return baseRound + diffWeeks;
     },
 
+    getExpectedDate: (drwNo) => {
+        const baseRound = 1100;
+        // Calculate date safely using midday UTC to avoid timezone boundary shifts
+        const baseDate = new Date(Date.UTC(2023, 11, 30, 12, 0, 0)); // 2023-12-30
+        const diffWeeks = drwNo - baseRound;
+        const targetDate = new Date(baseDate.getTime() + diffWeeks * 7 * 24 * 60 * 60 * 1000);
+        return targetDate.toISOString().split('T')[0];
+    },
+
     checkUpdateNeeded: (currentLatestRound, history) => {
         const expected = LottoService.getExpectedRound();
 

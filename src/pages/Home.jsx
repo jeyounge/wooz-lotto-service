@@ -122,6 +122,11 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
     // Current Predictor State (Default to Normal for Banner display initially)
     const [currentPredictor, setCurrentPredictor] = useState(predictorV4Normal);
 
+    // Sync current predictor when pastDraws (and thus predictor instances) update from DB
+    useEffect(() => {
+        setCurrentPredictor(prev => prev.killCount > 3 ? predictorV4Hard : predictorV4Normal);
+    }, [predictorV4Normal, predictorV4Hard]);
+
     // Load Weights (Use current predictor)
     useEffect(() => {
         setAllWeights(currentPredictor.getAllScores());
