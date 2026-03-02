@@ -20,28 +20,12 @@ function App() {
 
   // --- State: Official Past Draws (Global Data) ---
   const [pastDraws, setPastDraws] = useState(() => {
-    // 1. Check Cache
-    const cached = localStorage.getItem('officialDrawsCache_v3');
-    let cachedDraws = cached ? JSON.parse(cached) : [];
+    console.warn("Forcibly wiping local cache to normalize state");
+    localStorage.removeItem('officialDrawsCache_v3');
 
-    // CRITICAL CACHE BUSTER FOR MOBILE:
-    // If the cached highest round is less than the expected round (e.g. 1213),
-    // the cache is stale. We will just wipe it and rely on initial json + DB sync.
-    if (cachedDraws.length > 0) {
-      const highestCached = Math.max(...cachedDraws.map(d => d.drwNo));
-      // Optional: You can explicitly wipe if highestCached < 1213
-      if (highestCached < 1213) {
-        console.log("Stale local cache detected. Clearing...");
-        localStorage.removeItem('officialDrawsCache_v3');
-        cachedDraws = [];
-      }
-    }
-
-    // 2. Merge
-    const cachedIds = new Set(cachedDraws.map(d => d.drwNo));
-    const filteredInitial = initialLottoHistory.filter(d => !cachedIds.has(d.drwNo));
-    // 3. Sort
-    return [...cachedDraws, ...filteredInitial].sort((a, b) => b.drwNo - a.drwNo);
+    // Sort and return only the static base data.
+    // The real DB sync will happen immediately in the useEffect below.
+    return [...initialLottoHistory].sort((a, b) => b.drwNo - a.drwNo);
   });
 
   // --- Auth Effect ---
