@@ -20,11 +20,18 @@ function App() {
 
   // --- State: Official Past Draws (Global Data) ---
   const [pastDraws, setPastDraws] = useState(() => {
-    console.warn("Forcibly wiping local cache to normalize state");
-    localStorage.removeItem('officialDrawsCache_v3');
+    // Check cache first to prevent UI flickering/recalculation on refresh
+    const cached = localStorage.getItem('officialDrawsCache_v3');
+    if (cached) {
+      try {
+        const parsed = JSON.parse(cached);
+        if (parsed && parsed.length > 0) return parsed;
+      } catch (e) {
+        console.warn("Cache parsing failed, using initial.");
+      }
+    }
 
-    // Sort and return only the static base data.
-    // The real DB sync will happen immediately in the useEffect below.
+    // Sort and return only the static base data if no cache exists.
     return [...initialLottoHistory].sort((a, b) => b.drwNo - a.drwNo);
   });
 
@@ -121,11 +128,13 @@ function App() {
             // BURN the local cache and rebuild from scratch.
             if (dbHighest > prevHighest) {
               console.warn(`[Sync] Stale cache detected. DB: ${dbHighest} > Local: ${prevHighest}. Wiping local storage.`);
-              localStorage.removeItem('officialDrawsCache_v3');
 
               const dbIds = new Set(mappedRounds.map(d => d.drwNo));
               const filteredInitial = initialLottoHistory.filter(d => !dbIds.has(d.drwNo));
-              return [...mappedRounds, ...filteredInitial].sort((a, b) => b.drwNo - a.drwNo);
+              const newMerged = [...mappedRounds, ...filteredInitial].sort((a, b) => b.drwNo - a.drwNo);
+
+              localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newMerged));
+              return newMerged;
             }
 
             // Normal Merge
