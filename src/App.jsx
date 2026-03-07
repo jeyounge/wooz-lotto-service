@@ -169,15 +169,16 @@ function App() {
 
         if (newDrawRecord) {
           setPastDraws(prev => {
-            const updated = [newDrawRecord, ...prev].sort((a, b) => b.drwNo - a.drwNo);
+            const cleanPrev = prev.filter(p => p.drwNo !== newDrawRecord.drwNo);
+            const updated = [newDrawRecord, ...cleanPrev].sort((a, b) => b.drwNo - a.drwNo);
 
             const existingCache = localStorage.getItem('officialDrawsCache_v3');
             const cacheArr = existingCache ? JSON.parse(existingCache) : [];
 
-            if (!cacheArr.find(d => d.drwNo === newDrawRecord.drwNo)) {
-              const newCache = [newDrawRecord, ...cacheArr];
-              localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newCache));
-            }
+            const cleanCacheArr = cacheArr.filter(c => c.drwNo !== newDrawRecord.drwNo);
+            const newCache = [newDrawRecord, ...cleanCacheArr].sort((a, b) => b.drwNo - a.drwNo);
+            localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newCache));
+
             return updated;
           });
           console.log(`Round ${newDrawRecord.drwNo} updated!`);
