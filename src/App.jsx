@@ -161,7 +161,7 @@ function App() {
       }
 
       // 2. Check if new round is available from scraping
-      const neededRound = LottoService.checkUpdateNeeded(latestKnownRound, prev);
+      const neededRound = LottoService.checkUpdateNeeded(latestKnownRound, pastDraws);
 
       if (neededRound) {
         console.log(`Getting update for round ${neededRound}...`);
