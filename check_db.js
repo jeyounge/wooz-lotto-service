@@ -1,32 +1,35 @@
-
 import { createClient } from '@supabase/supabase-js';
-import dotenv from 'dotenv';
 import fs from 'fs';
 
-const envConfig = dotenv.parse(fs.readFileSync('.env'));
-const supabase = createClient(envConfig.VITE_SUPABASE_URL, envConfig.VITE_SUPABASE_ANON_KEY);
+const envPath = 'c:\\project\\wooz-lotto-service\\.env';
+let envConfig = {};
+try {
+    const envContent = fs.readFileSync(envPath, 'utf-8');
+    envContent.split('\n').forEach(line => {
+        const parts = line.split('=');
+        if (parts.length >= 2) {
+            const key = parts[0].trim();
+            const val = parts.slice(1).join('=').trim();
+            envConfig[key] = val;
+        }
+    });
+} catch (e) {
+    console.warn("Could not load .env file", e);
+}
 
-const check = async () => {
-    // 1. Count
-    const { count, error: countErr } = await supabase
-        .from('lotto_history')
-        .select('*', { count: 'exact', head: true });
-    
-    if (countErr) console.error('Count Error:', countErr);
-    console.log(`Total Rows in 'lotto_history': ${count}`);
+const supabase = createClient(
+    envConfig.VITE_SUPABASE_URL,
+    envConfig.VITE_SUPABASE_ANON_KEY
+);
 
-    // 2. Check 1208
+async function check() {
     const { data, error } = await supabase
         .from('lotto_history')
         .select('*')
-        .eq('drw_no', 1208)
-        .single();
+        .eq('drw_no', 1214);
 
-    if (error) console.error('Fetch 1208 Error:', error);
-    else {
-        const keys = Object.keys(data);
-        console.log('Filtered Keys:', keys.filter(k => k.includes('drw') || k.includes('draw')));
-    }
-};
+    console.log("DB DATA:", JSON.stringify(data, null, 2));
+    if (error) console.error("DB ERROR:", error);
+}
 
 check();

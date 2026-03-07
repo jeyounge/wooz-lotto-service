@@ -35,7 +35,7 @@ try {
 
 // Setup Supabase (Force URLs from env if possible, or fallback)
 const supabase = createClient(
-    envConfig.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '', 
+    envConfig.VITE_SUPABASE_URL || process.env.VITE_SUPABASE_URL || '',
     envConfig.VITE_SUPABASE_ANON_KEY || process.env.VITE_SUPABASE_ANON_KEY || ''
 );
 
@@ -161,7 +161,7 @@ async function syncToDB(round, fullHistory) {
         if (fullHistory) {
             // Filter history strictly BEFORE this round
             const prevData = fullHistory.filter(h => h.drwNo < round.drwNo);
-            
+
             if (prevData.length >= 15) {
                 // 3-Kill
                 const kill3 = computeKillStrategy(prevData, 3);
@@ -174,18 +174,18 @@ async function syncToDB(round, fullHistory) {
                 const kill5Success = kill5HitCount === 0;
 
                 const killParams = {
-                    p_drw_no:          round.drwNo,
-                    p_actual_numbers:  round.numbers,
-                    p_kill3_list:      kill3.killList,
-                    p_kill3_reasons:   kill3.killReasons,
+                    p_drw_no: round.drwNo,
+                    p_actual_numbers: round.numbers,
+                    p_kill3_list: kill3.killList,
+                    p_kill3_reasons: kill3.killReasons,
                     p_kill3_hit_count: kill3HitCount,
-                    p_kill3_success:   kill3Success,
-                    p_kill5_list:      kill5.killList,
-                    p_kill5_reasons:   kill5.killReasons,
+                    p_kill3_success: kill3Success,
+                    p_kill5_list: kill5.killList,
+                    p_kill5_reasons: kill5.killReasons,
                     p_kill5_hit_count: kill5HitCount,
-                    p_kill5_success:   kill5Success,
+                    p_kill5_success: kill5Success,
                 };
-                
+
                 const { error: killErr } = await supabase.rpc('upsert_kill_record', killParams);
                 if (killErr) {
                     console.error(`⚠️ [Kill Sync] Error ${round.drwNo}:`, killErr.message);
@@ -202,7 +202,7 @@ async function syncToDB(round, fullHistory) {
 async function scrape() {
     console.log('Starting Scraper for data.soledot.com...');
     let history = [];
-    
+
     // Load existing data
     if (fs.existsSync(OUTPUT_FILE)) {
         try {
@@ -212,7 +212,7 @@ async function scrape() {
             console.error('Failed to load existing history:', e);
         }
     }
-    
+
     let newItems = [];
 
     // Optimized: Check only first page for quick update
@@ -224,10 +224,10 @@ async function scrape() {
                     'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/91.0.4472.124 Safari/537.36'
                 }
             });
-            
+
             const $ = cheerio.load(response.data);
             const rows = $('#table1 tbody tr');
-            
+
             if (rows.length === 0) {
                 console.log('No more rows found. Stopping.');
                 break;
@@ -241,7 +241,7 @@ async function scrape() {
 
                 const roundStr = $(tds[0]).text().trim();
                 const round = parseInt(roundStr, 10);
-                if (!round) continue; 
+                if (!round) continue;
 
                 // Numbers
                 const numberDivs = $(tds[1]).find('.circleNumber');
@@ -253,6 +253,11 @@ async function scrape() {
 
                 const bonusStr = $(tds[2]).find('.circleNumber').text().trim();
                 const bonus = parseInt(bonusStr, 10);
+
+                if (numbers.length < 6 || numbers.some(n => isNaN(n) || !n)) {
+                    console.log(`Skipping round ${round} as numbers are not fully drawn yet.`);
+                    continue;
+                }
 
                 const winnersStr = $(tds[3]).text().trim().replace(/,/g, '');
                 const winners = parseInt(winnersStr, 10);
@@ -270,7 +275,7 @@ async function scrape() {
                     firstWinamnt: prize,
                     firstPrzwnerCo: winners
                 };
-                
+
                 // Add to history if new
                 if (!history.find(h => h.drwNo === round)) {
                     history.push(record);
@@ -279,8 +284,8 @@ async function scrape() {
                     // Update existing record if needed (e.g. pending prize became fixed)
                     const existing = history.find(h => h.drwNo === round);
                     if (existing.firstPrzwnerCo === 0 && winners > 0) {
-                         Object.assign(existing, record);
-                         newItems.push(record); // Treat as new for sync
+                        Object.assign(existing, record);
+                        newItems.push(record); // Treat as new for sync
                     }
                 }
             }
@@ -294,7 +299,7 @@ async function scrape() {
 
     // Sort
     history.sort((a, b) => b.drwNo - a.drwNo);
-    history = history.filter((v,i,a)=>a.findIndex(t=>(t.drwNo === v.drwNo))===i);
+    history = history.filter((v, i, a) => a.findIndex(t => (t.drwNo === v.drwNo)) === i);
 
     console.log(`\nCollected ${history.length} records.`);
     fs.writeFileSync(OUTPUT_FILE, JSON.stringify(history, null, 2), 'utf-8');
@@ -304,8 +309,8 @@ async function scrape() {
     if (newItems.length > 0) {
         // Optional: Force sync latest round just in case (useful for dev/debugging)
         if (history.length > 0) {
-             // Uncomment to force re-sync latest round for kill stats testing
-             // await syncToDB(history[0], history);
+            // Uncomment to force re-sync latest round for kill stats testing
+            // await syncToDB(history[0], history);
         }
         for (const item of newItems) {
             await syncToDB(item, history);

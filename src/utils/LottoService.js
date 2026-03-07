@@ -26,7 +26,18 @@ export const LottoService = {
     checkUpdateNeeded: (currentLatestRound, history) => {
         const expected = LottoService.getExpectedRound();
 
-        if (currentLatestRound >= expected) return false;
+        let isLatestInvalid = false;
+        if (history && history.length > 0) {
+            const latestRecord = history.find(h => h.drwNo === currentLatestRound);
+            if (latestRecord) {
+                isLatestInvalid = !latestRecord.numbers ||
+                    !Array.isArray(latestRecord.numbers) ||
+                    latestRecord.numbers.length < 6 ||
+                    latestRecord.numbers.some(n => n === null || isNaN(n));
+            }
+        }
+
+        if (currentLatestRound >= expected && !isLatestInvalid) return false;
 
         const lastAttempt = localStorage.getItem('lastLottoFetchAttempt');
         if (lastAttempt) {
@@ -37,8 +48,8 @@ export const LottoService = {
             }
         }
 
-        console.log(`Update needed: Have ${currentLatestRound}, Expecting ${expected}`);
-        return expected;
+        console.log(`Update needed: Have ${currentLatestRound}, Expecting ${expected}${isLatestInvalid ? ' (Invalid Data Detected)' : ''}`);
+        return isLatestInvalid ? currentLatestRound : expected;
     },
 
     fetchRound: async (drwNo) => {
