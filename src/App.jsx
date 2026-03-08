@@ -20,18 +20,8 @@ function App() {
 
   // --- State: Official Past Draws (Global Data) ---
   const [pastDraws, setPastDraws] = useState(() => {
-    // Check cache first to prevent UI flickering/recalculation on refresh
-    const cached = localStorage.getItem('officialDrawsCache_v3');
-    if (cached) {
-      try {
-        const parsed = JSON.parse(cached);
-        if (parsed && parsed.length > 0) return parsed;
-      } catch (e) {
-        console.warn("Cache parsing failed, using initial.");
-      }
-    }
-
-    // Sort and return only the static base data if no cache exists.
+    // Rely exclusively on initial base data for immediate render,
+    // Database sync will immediately overwrite this with fresh data.
     return [...initialLottoHistory].sort((a, b) => b.drwNo - a.drwNo);
   });
 
@@ -97,7 +87,7 @@ function App() {
       try {
         const { data: dbRounds, error: dbErr } = await supabase
           .from('lotto_history')
-          .select('drw_no, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
+          .select('drw_no, drw_date, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
           .order('drw_no', { ascending: false })
           .limit(5);
 
@@ -110,7 +100,7 @@ function App() {
           // Convert snake_case DB fields to camelCase for frontend
           const mappedRounds = dbRounds.map(r => ({
             drwNo: r.drw_no,
-            drwNoDate: LottoService.getExpectedDate(r.drw_no),
+            drwNoDate: r.drw_date || LottoService.getExpectedDate(r.drw_no),
             numbers: r.numbers,
             bonus: r.bonus,
             firstWinamnt: r.first_win_amnt,
@@ -126,30 +116,10 @@ function App() {
           }));
 
           setPastDraws(prev => {
-            const dbHighest = Math.max(...mappedRounds.map(r => r.drwNo));
-            const prevHighest = prev.length > 0 ? Math.max(...prev.map(r => r.drwNo)) : 0;
-
-            // CRITICAL MOBILE CACHE FIX: DB is source of truth.
-            // If DB knows about a newer round than our local state (localStorage),
-            // BURN the local cache and rebuild from scratch.
-            if (dbHighest > prevHighest) {
-              console.warn(`[Sync] Stale cache detected. DB: ${dbHighest} > Local: ${prevHighest}. Wiping local storage.`);
-
-              const dbIds = new Set(mappedRounds.map(d => d.drwNo));
-              const filteredInitial = initialLottoHistory.filter(d => !dbIds.has(d.drwNo));
-              const newMerged = [...mappedRounds, ...filteredInitial].sort((a, b) => b.drwNo - a.drwNo);
-
-              localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newMerged));
-              return newMerged;
-            }
-
-            // Normal Merge
+            // DB is the single source of truth. Normal Merge with initial data
             const dbIds = new Set(mappedRounds.map(d => d.drwNo));
             const filtered = prev.filter(d => !dbIds.has(d.drwNo));
             const merged = [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
-
-            // ALWAYS update the offline cache so we don't start stale next time
-            localStorage.setItem('officialDrawsCache_v3', JSON.stringify(merged));
 
             return merged;
           });
@@ -171,14 +141,6 @@ function App() {
           setPastDraws(prev => {
             const cleanPrev = prev.filter(p => p.drwNo !== newDrawRecord.drwNo);
             const updated = [newDrawRecord, ...cleanPrev].sort((a, b) => b.drwNo - a.drwNo);
-
-            const existingCache = localStorage.getItem('officialDrawsCache_v3');
-            const cacheArr = existingCache ? JSON.parse(existingCache) : [];
-
-            const cleanCacheArr = cacheArr.filter(c => c.drwNo !== newDrawRecord.drwNo);
-            const newCache = [newDrawRecord, ...cleanCacheArr].sort((a, b) => b.drwNo - a.drwNo);
-            localStorage.setItem('officialDrawsCache_v3', JSON.stringify(newCache));
-
             return updated;
           });
           console.log(`Round ${newDrawRecord.drwNo} updated!`);
@@ -187,7 +149,7 @@ function App() {
           try {
             const dbPayload = {
               drw_no: newDrawRecord.drwNo,
-              // drw_no_date: newDrawRecord.drwNoDate, // Removed because it's not in DB Schema
+              drw_date: newDrawRecord.drwNoDate,
               numbers: newDrawRecord.numbers,
               bonus: newDrawRecord.bonus,
               first_win_amnt: newDrawRecord.firstWinamnt,
