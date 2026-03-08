@@ -19,12 +19,12 @@ export const ResultProcessor = {
             latestHistory.forEach(h => historyMap[h.drw_no] = h);
             const latestRound = latestHistory[0].drw_no;
 
-            // 2. Fetch a batch of 'pending' predictions for finished rounds
-            // We limit to 20 to strictly avoid impacting user performance
+            // 2. Fetch a batch of predictions that need processing:
+            // Either 'pending' status OR 'win' status but with null prize (to fix corrupted data)
             const { data: pending, error: pErr } = await supabase
                 .from('predictions')
                 .select('*')
-                .eq('status', 'pending')
+                .or('status.eq.pending,and(status.eq.win,prize.is.null)')
                 .lte('drw_no', latestRound) // Only check rounds that happened
                 .limit(50); // Increased to 50 for faster crowd-sourcing
 
@@ -36,15 +36,16 @@ export const ResultProcessor = {
             const updates = [];
             pending.forEach(p => {
                 const draw = historyMap[p.drw_no];
-                
+
                 // If draw is not in our recent 10 cache, we might need to fetch it individually?
                 // For efficiency, we skip if it's too old (unlikely case for active app, or we can expand cache)
                 // Or we can just fetch single draw here if missing. 
                 // Let's keep it simple: matching rounds only.
-                if (!draw) return; 
+                if (!draw) return;
 
                 const result = checkWin(p.numbers, draw);
-                if (result.status !== 'pending') {
+                // Update if it was pending, OR if it's our retroactive fix case
+                if (result.status !== 'pending' || (p.status === 'win' && p.prize == null)) {
                     updates.push({
                         id: p.id,
                         status: result.status,
@@ -59,15 +60,15 @@ export const ResultProcessor = {
             // 4. Batch Update (Use .update() to avoid INSERT permission check caused by upsert)
             // We use Promise.all for parallelism. 50 items is manageable.
             if (updates.length > 0) {
-                 await Promise.all(updates.map(u => 
-                     supabase.from('predictions')
-                        .update({ 
-                            status: u.status, 
-                            rank: u.rank, 
-                            prize: u.prize 
+                await Promise.all(updates.map(u =>
+                    supabase.from('predictions')
+                        .update({
+                            status: u.status,
+                            rank: u.rank,
+                            prize: u.prize
                         })
                         .eq('id', u.id)
-                 ));
+                ));
                 console.log(`[Background] Updated ${updates.length} records.`);
             }
 
@@ -89,6 +90,6 @@ function checkWin(numbers, drawData) {
     if (matchCount === 5) return { status: 'win', rank: 3, prize: drawData.third_win_amnt };
     if (matchCount === 4) return { status: 'win', rank: 4, prize: drawData.fourth_win_amnt };
     if (matchCount === 3) return { status: 'win', rank: 5, prize: drawData.fifth_win_amnt };
-    
+
     return { status: 'lose', rank: null, prize: 0 };
 }
