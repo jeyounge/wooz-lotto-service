@@ -10,8 +10,8 @@ export default function PatchNotesPage() {
 
         {/* Header */}
         <div style={{ marginBottom: '32px' }}>
-          <button onClick={() => navigate(-1)} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '16px', padding: 0 }}>
-            ← 돌아가기
+          <button onClick={() => navigate('/')} style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '16px', padding: 0 }}>
+            ← 홈으로 돌아가기
           </button>
           <h1 style={{ fontSize: '1.8rem', fontWeight: 'bold', margin: '0 0 8px' }}>📋 패치노트</h1>
           <p style={{ color: '#888', fontSize: '0.9rem', margin: 0 }}>로또 Z 업데이트 내역을 투명하게 공개합니다.</p>

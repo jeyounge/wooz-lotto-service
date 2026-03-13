@@ -32,3 +32,13 @@ ALTER TABLE public.community_comments ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Anyone can read comments" ON public.community_comments FOR SELECT USING (is_deleted = false);
 CREATE POLICY "Logged in users can insert comments" ON public.community_comments FOR INSERT WITH CHECK (auth.uid() = user_id);
 CREATE POLICY "Users can delete own comments" ON public.community_comments FOR DELETE USING (auth.uid() = user_id);
+
+-- increment_view function
+CREATE OR REPLACE FUNCTION public.increment_view(post_id UUID)
+RETURNS VOID AS $$
+BEGIN
+    UPDATE public.community_posts
+    SET view_count = view_count + 1
+    WHERE id = post_id;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;

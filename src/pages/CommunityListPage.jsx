@@ -37,6 +37,14 @@ export default function CommunityListPage({ session, userProfile }) {
     <div style={{ minHeight: '100vh', background: '#0d0d0d', color: '#fff', padding: '80px 20px 40px' }}>
       <div style={{ maxWidth: '700px', margin: '0 auto' }}>
 
+        {/* Back Button */}
+        <button 
+          onClick={() => navigate('/')} 
+          style={{ background: 'none', border: 'none', color: '#888', cursor: 'pointer', fontSize: '0.85rem', marginBottom: '16px', padding: 0 }}
+        >
+          ← 홈으로 돌아가기
+        </button>
+
         {/* Header */}
         <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: '24px', flexWrap: 'wrap', gap: '12px' }}>
           <div>
