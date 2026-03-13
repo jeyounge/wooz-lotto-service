@@ -14,7 +14,7 @@ export const getPredictionStatus = (nextRound) => {
             // Saturday 20:00 ~ 20:59
             return {
                 isOpen: false,
-                message: `${nextRound}회차 발매가 마감되었습니다.`
+                message: `발매가 마감되었습니다. 추첨 후 일요일 오전 6시부터 예측 가능합니다.`
             };
         }
         if (hours >= 21) {

@@ -290,84 +290,6 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         return 'green';
     }
 
-    // --- Admin Hidden Prediction Logic ---
-    const handleHiddenPredict = async () => {
-        const allowedAdmins = ['jeyounge@nate.com', 'pjhee9035@naver.com', 'fc6443@hanmail.net'];
-        if (!session || !allowedAdmins.includes(session.user.email)) return;
-        setIsAnalyzing(true);
-
-        try {
-            // 1. Fetch ALL predictions for this round
-            const { data: roundData, error } = await supabase
-                .from('predictions')
-                .select('numbers')
-                .eq('drw_no', nextRound);
-
-            if (error) throw error;
-
-            // 2. Analyze Crowd Stats
-            const counts = {};
-            for (let i = 1; i <= 45; i++) counts[i] = 0;
-
-            roundData.forEach(row => {
-                row.numbers.forEach(num => counts[num]++);
-            });
-
-            const sortedNums = Object.keys(counts).map(n => parseInt(n)).sort((a, b) => counts[b] - counts[a]); // Descending
-            const zeroPicked = Object.keys(counts).filter(n => counts[n] === 0).map(n => parseInt(n));
-            const picked = Object.keys(counts).filter(n => counts[n] > 0).map(n => parseInt(n));
-
-            // Game 1: Most Picked (Top 6)
-            const game1 = sortedNums.slice(0, 6).sort((a, b) => a - b);
-
-            // Game 2: Least Picked (Bottom 6 of those who were picked)
-            // sortedNums includes zeros at the end, so we filter only picked ones first
-            const sortedPicked = picked.sort((a, b) => counts[a] - counts[b]); // Ascending (Least first)
-            const game2 = sortedPicked.slice(0, 6).sort((a, b) => a - b);
-
-            // Game 3: Zero Picked (Avoid 5-KILL if possible)
-            // Filter out 5-KILL numbers from zeroPicked
-            const kills = currentPredictor.killList || [];
-            let candidates3 = zeroPicked.filter(n => !kills.includes(n));
-
-            // If not enough, fill with kills, then least picked
-            if (candidates3.length < 6) {
-                const needed = 6 - candidates3.length;
-                // Try adding kills that were zero picked
-                const killsZero = zeroPicked.filter(n => kills.includes(n));
-                candidates3 = [...candidates3, ...killsZero].slice(0, 6);
-
-                // If still not enough, add least picked
-                if (candidates3.length < 6) {
-                    const moreNeeded = 6 - candidates3.length;
-                    const others = sortedPicked.filter(n => !candidates3.includes(n));
-                    candidates3 = [...candidates3, ...others].slice(0, 6);
-                }
-            }
-            // Shuffle and pick 6
-            const game3 = candidates3.sort(() => 0.5 - Math.random()).slice(0, 6).sort((a, b) => a - b);
-
-            // 3. Save 3 Games
-            const hiddenPayloads = [
-                { drw_no: nextRound, numbers: game1, analysis: ["🕵️ Strategy: Crowd Top 6 (다수결)"], is_hidden: true, user_id: session.user.id, is_challenge: false },
-                { drw_no: nextRound, numbers: game2, analysis: ["🐸 Strategy: Crowd Bottom 6 (청개구리)"], is_hidden: true, user_id: session.user.id, is_challenge: false },
-                { drw_no: nextRound, numbers: game3, analysis: ["👻 Strategy: Zero Pick (틈새시장)"], is_hidden: true, user_id: session.user.id, is_challenge: false }
-            ];
-
-            const { error: insertError } = await supabase.from('predictions').insert(hiddenPayloads);
-            if (insertError) throw insertError;
-
-            // Refresh
-            fetchHistory();
-            alert("🕵️ 히든 예측 3게임 생성 완료!");
-
-        } catch (err) {
-            console.error("Hidden predict error:", err);
-            alert("Error generating hidden prediction");
-        } finally {
-            setIsAnalyzing(false);
-        }
-    };
 
     return (
         <div className="home-layout">
@@ -565,11 +487,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                             <button className="btn-predict-outline" onClick={() => generateNumbers(true)} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#ff4d4d', color: '#ff4d4d', background: 'rgba(255,0,0,0.05)', padding: '15px' }}>
                                 🔥 챌린지 (5-KILL)
                             </button>
-                            {session && ['jeyounge@nate.com', 'pjhee9035@naver.com', 'fc6443@hanmail.net'].includes(session.user?.email) && (
-                                <button className="btn-predict-outline" onClick={handleHiddenPredict} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#00f260', color: '#00f260', background: 'rgba(0,242,96,0.05)', padding: '15px' }}>
-                                    🕵️ 히든 예측 (관리자)
-                                </button>
-                            )}
+
                         </div>
                     ) : (
                         <div style={{
