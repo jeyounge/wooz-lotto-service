@@ -626,7 +626,11 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     </div>
                     <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', fontSize: '0.75rem', color: '#666' }}>
                         © 2026 Lotto Z. <br />
-                        <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
+                        <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
+                            <button onClick={() => navigate('/community')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>💬 게시판</button>
+                            <button onClick={() => navigate('/patch-notes')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>📋 패치노트</button>
+                            <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
+                        </div>
                     </div>
                 </div>
             </aside>

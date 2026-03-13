@@ -10,6 +10,10 @@ import Home from './pages/Home'
 import MyPage from './pages/MyPage'
 import RoundResult from './pages/RoundResult'
 import InquiryPage from './pages/InquiryPage'
+import CommunityListPage from './pages/CommunityListPage'
+import CommunityWritePage from './pages/CommunityWritePage'
+import CommunityDetailPage from './pages/CommunityDetailPage'
+import PatchNotesPage from './pages/PatchNotesPage'
 
 import './App.css'
 
@@ -213,6 +217,11 @@ function App() {
           } />
 
           <Route path="/inquiry" element={<InquiryPage />} />
+
+          <Route path="/community" element={<CommunityListPage session={session} userProfile={userProfile} />} />
+          <Route path="/community/write" element={<CommunityWritePage session={session} userProfile={userProfile} />} />
+          <Route path="/community/:id" element={<CommunityDetailPage session={session} userProfile={userProfile} />} />
+          <Route path="/patch-notes" element={<PatchNotesPage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />
