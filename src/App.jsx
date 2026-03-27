@@ -14,6 +14,9 @@ import CommunityListPage from './pages/CommunityListPage'
 import CommunityWritePage from './pages/CommunityWritePage'
 import CommunityDetailPage from './pages/CommunityDetailPage'
 import PatchNotesPage from './pages/PatchNotesPage'
+import ArticlesPage from './pages/ArticlesPage'
+import ArticleDetailPage from './pages/ArticleDetailPage'
+import GuidePage from './pages/GuidePage'
 
 import './App.css'
 
@@ -222,6 +225,10 @@ function App() {
           <Route path="/community/write" element={<CommunityWritePage session={session} userProfile={userProfile} />} />
           <Route path="/community/:id" element={<CommunityDetailPage session={session} userProfile={userProfile} />} />
           <Route path="/patch-notes" element={<PatchNotesPage />} />
+
+          <Route path="/articles" element={<ArticlesPage />} />
+          <Route path="/articles/:id" element={<ArticleDetailPage />} />
+          <Route path="/guide" element={<GuidePage />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

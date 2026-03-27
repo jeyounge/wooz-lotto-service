@@ -561,6 +561,11 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     <div style={{ background: 'rgba(5, 117, 230, 0.1)', border: '1px solid rgba(5, 117, 230, 0.3)', padding: '15px', borderRadius: '8px', marginTop: '25px', fontSize: '0.85rem' }}>
                         * 로또 Z는 사용자의 당첨을 보장하지 않으며, 모든 예측 조합은 통계 기반의 확률적 결과물일 뿐 참고 용도로만 활용하시기 바랍니다.
                         빅데이터가 추천하는 이 주의 황금 번호 라인업으로 여러분의 행운을 극대화해 보세요! 🍀
+                        <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                            <button onClick={() => navigate('/guide')} className="btn-predict-outline" style={{ padding: '8px 16px', fontSize: '0.9rem', backgroundColor: 'transparent' }}>
+                                📖 Z-Labs 예측 알고리즘 상세 가이드 읽기
+                            </button>
+                        </div>
                     </div>
                 </section>
             </main>
@@ -627,8 +632,10 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     <div style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px solid rgba(255,255,255,0.1)', textAlign: 'center', fontSize: '0.75rem', color: '#666' }}>
                         © 2026 Lotto Z. <br />
                         <div style={{ display: 'flex', justifyContent: 'center', gap: '12px', marginTop: '6px', flexWrap: 'wrap' }}>
+                            <button onClick={() => navigate('/articles')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>📝 분석 칼럼</button>
                             <button onClick={() => navigate('/community')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>💬 게시판</button>
                             <button onClick={() => navigate('/patch-notes')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>📋 패치노트</button>
+                            <button onClick={() => navigate('/guide')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>📘 이용가이드</button>
                             <button onClick={() => navigate('/inquiry')} style={{ background: 'none', border: 'none', padding: 0, color: '#888', textDecoration: 'underline', cursor: 'pointer', fontSize: '0.75rem' }}>문의하기</button>
                         </div>
                     </div>
