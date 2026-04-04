@@ -57,7 +57,8 @@ class LottoPredictorV4 extends LottoPredictorV2 {
             }
         }
 
-        // --- Priority 3: Weakest of Hot Digit (SAFETY VALVE APPLIED) ---
+        // --- Priority 3: Multiple Weakest of Hot Digits (Option B) ---
+        // Pick 1 weakest candidate from the 1st hot digit, then 1 from the 2nd hot digit, etc.
         // Only if we haven't reached kill count
         if (kills.size < this.killCount) {
             const last5 = sorted.slice(0, 5);
@@ -72,13 +73,15 @@ class LottoPredictorV4 extends LottoPredictorV2 {
                 });
             });
 
-            // Find hottest digit
-            const hottestDigitEntry = Object.entries(digitsCount)
+            // Find hottest digits, sorted descending by count
+            const sortedDigitEntries = Object.entries(digitsCount)
                 .sort((a, b) => parseInt(a[0]) - parseInt(b[0])) // Pre-sort keys to guarantee stable tie-breaking later
-                .sort((a, b) => b[1] - a[1] || parseInt(a[0]) - parseInt(b[0]))[0];
+                .sort((a, b) => b[1] - a[1] || parseInt(a[0]) - parseInt(b[0]));
 
-            if (hottestDigitEntry) {
-                const targetDigit = parseInt(hottestDigitEntry[0]);
+            for (const [digitStr, count] of sortedDigitEntries) {
+                if (kills.size >= this.killCount) break;
+
+                const targetDigit = parseInt(digitStr);
 
                 // Candidates: Numbers with this digit
                 const candidates = [];
@@ -89,15 +92,18 @@ class LottoPredictorV4 extends LottoPredictorV2 {
                 // Sort by Frequency Asc (Weakest first)
                 candidates.sort((a, b) => (numCounts[a] || 0) - (numCounts[b] || 0) || a - b);
 
+                // Find exactly ONE valid candidate for this digit
                 for (const cand of candidates) {
-                    // CRITICAL CHANGE: Check Safety Valve
                     if (isHot(cand)) {
                         console.log(`[V4] Saved Hot Number ${cand} from execution (Digit Rule)`);
                         continue;
                     }
 
-                    addKill(cand, `Weakest of Hot Digit ${targetDigit} (안전장치 통과)`);
-                    if (kills.size >= this.killCount) break;
+                    // Only add if not already killed (by Priority 1 or 2)
+                    if (!kills.has(cand)) {
+                        addKill(cand, `Weakest of Hot Digit ${targetDigit} (안전장치 통과)`);
+                        break; // Picked 1, go to the next hot digit
+                    }
                 }
             }
         }
