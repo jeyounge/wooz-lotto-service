@@ -1,27 +1,27 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url>
-    <loc>https://wooz-lotto.kr/</loc>
+    <loc>http://lotto.z-labs.kr/</loc>
     <changefreq>daily</changefreq>
     <priority>1.0</priority>
   </url>
   <url>
-    <loc>https://wooz-lotto.kr/articles</loc>
+    <loc>http://lotto.z-labs.kr/articles</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://wooz-lotto.kr/guide</loc>
+    <loc>http://lotto.z-labs.kr/guide</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://wooz-lotto.kr/community</loc>
+    <loc>http://lotto.z-labs.kr/community</loc>
     <changefreq>daily</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
-    <loc>https://wooz-lotto.kr/patch-notes</loc>
+    <loc>http://lotto.z-labs.kr/patch-notes</loc>
     <changefreq>weekly</changefreq>
     <priority>0.5</priority>
   </url>
