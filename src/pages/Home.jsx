@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import LottoPredictorV4 from '../utils/LottoPredictorV4' // Upgraded to V4
+import LottoPredictorV5 from '../utils/LottoPredictorV5' // Upgraded to V5
 import { supabase } from '../supabaseClient' // Adjusted path
 import Auth from '../components/Auth' // Adjusted path
 import { getPredictionStatus } from '../utils/timeUtils'
@@ -116,16 +116,16 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
 
     // Predictor Instances
-    const predictorV4Normal = useMemo(() => new LottoPredictorV4(pastDraws, { killCount: 3 }), [pastDraws]);
-    const predictorV4Hard = useMemo(() => new LottoPredictorV4(pastDraws, { killCount: 5 }), [pastDraws]);
+    const predictorV5Normal = useMemo(() => new LottoPredictorV5(pastDraws, { killCount: 5 }), [pastDraws]);
+    const predictorV5Hard = useMemo(() => new LottoPredictorV5(pastDraws, { killCount: 10 }), [pastDraws]);
 
     // Current Predictor State (Default to Normal for Banner display initially)
-    const [currentPredictor, setCurrentPredictor] = useState(predictorV4Normal);
+    const [currentPredictor, setCurrentPredictor] = useState(predictorV5Normal);
 
     // Sync current predictor when pastDraws (and thus predictor instances) update from DB
     useEffect(() => {
-        setCurrentPredictor(prev => prev.killCount > 3 ? predictorV4Hard : predictorV4Normal);
-    }, [predictorV4Normal, predictorV4Hard]);
+        setCurrentPredictor(prev => prev.killCount > 5 ? predictorV5Hard : predictorV5Normal);
+    }, [predictorV5Normal, predictorV5Hard]);
 
     // Load Weights (Use current predictor)
     useEffect(() => {
@@ -190,7 +190,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         setIsAnalyzing(true);
 
         // Select Predictor
-        const targetPredictor = isChallenge ? predictorV4Hard : predictorV4Normal;
+        const targetPredictor = isChallenge ? predictorV5Hard : predictorV5Normal;
         setCurrentPredictor(targetPredictor);
 
         setTimeout(async () => {
@@ -203,7 +203,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
             // Add Challenge Tag to analysis if needed
             const analysisData = [...result.analysis];
             if (isChallenge) {
-                analysisData.unshift(`💪 챌린지 모드 (5-KILL) 적용`);
+                analysisData.unshift(`💪 챌린지 모드 (10-KILL) 적용`);
             }
 
             setAnalysis(analysisData);
@@ -265,7 +265,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         // (It's deterministic based on numbers, so safe to recalc)
         // Note: History items won't restore the exact specific Kill List of that time, 
         // but the scores calculation is generic V4 logic.
-        const currentScores = item.scores || predictorV4Normal.getScores(item.numbers);
+        const currentScores = item.scores || predictorV5Normal.getScores(item.numbers);
         setScores(currentScores);
 
         // 2. Analysis: MUST use DB version if available to preserve the "feeling"
@@ -328,7 +328,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                 최근 진행된 {lastRound.drwNo}회 추첨 결과, 당첨 번호는 <strong>{lastRound.numbers.join(', ')}</strong> 번이고 보너스 번호는 <strong>{lastRound.bonus}</strong> 번이 등장했습니다.
                                 이번 회차에서는 총 <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : 'N명'}</strong>의 1등 당첨자가 배출되어 각각 약 <strong>{lastRound.firstWinamnt > 0 ? `${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}원` : '집계 중'}</strong>의 당첨금을 수령하게 되었습니다.
                                 로또 Z의 빅데이터 AI 엔진은 즉각적으로 {lastRound.drwNo}회차 당첨 결과의 모서리 패턴, 끝수 분포 빈도, 콜드 넘버(장기 미출현) 해소 여부 등의 심층 통계 데이터를 메인 DB에 성공적으로 학습 완료했습니다.
-                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 3-KILL 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
+                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 5-KILL 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
                             </div>
                         </div>
                     )}
@@ -343,7 +343,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
                         <div style={{ display: 'flex', justifyContent: 'space-around', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>3-KILL 제외 적중</div>
+                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 제외 적중</div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate3 >= 80 ? '#00f260' : '#fff' }}>
                                     {killStats.successRate3}%
                                 </div>
@@ -351,7 +351,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                             </div>
                             <div style={{ width: '1px', background: '#444' }}></div>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 제외 적중</div>
+                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>10-KILL 제외 적중</div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#fab1a0' : '#fff' }}>
                                     {killStats.successRate5}%
                                 </div>
@@ -399,15 +399,15 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
                 {/* KILL Strategy Banner - Dynamic based on currentPredictor state */}
                 {currentPredictor.killList && currentPredictor.killList.length > 0 && (
-                    <section className="kill-banner fade-in" style={{ margin: '0 20px 20px', padding: '20px', background: currentPredictor.killCount > 3 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.08)', border: currentPredictor.killCount > 3 ? '1px solid #ff4d4d' : '1px solid rgba(255, 0, 0, 0.2)', borderRadius: '16px', textAlign: 'center' }}>
+                    <section className="kill-banner fade-in" style={{ margin: '0 20px 20px', padding: '20px', background: currentPredictor.killCount > 5 ? 'rgba(255, 0, 0, 0.15)' : 'rgba(255, 0, 0, 0.08)', border: currentPredictor.killCount > 5 ? '1px solid #ff4d4d' : '1px solid rgba(255, 0, 0, 0.2)', borderRadius: '16px', textAlign: 'center' }}>
 
                         {/* CORE 3-KILL */}
                         <div className="kill-section-core">
                             <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#ff4d4d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                {currentPredictor.killCount > 3 ? '⚔️ 기본 3-KILL (핵심)' : '☠️ 로또 Z 핵심 기법 [3-KILL]'}
+                                {currentPredictor.killCount > 5 ? '⚔️ 기본 5-KILL (핵심)' : '☠️ 로또 Z 핵심 기법 [5-KILL]'}
                             </h3>
                             <div className="kill-list" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                {currentPredictor.killList.slice(0, 3).map(num => (
+                                {currentPredictor.killList.slice(0, 5).map(num => (
                                     <div key={num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
                                         <div className={`mini-ball`} style={{ width: '40px', height: '40px', lineHeight: '38px', fontSize: '1.1rem', background: '#2a2a2a', color: '#ff6b6b', textDecoration: 'line-through', border: '1px solid #ff4d4d' }}>{num}</div>
                                         <span style={{ fontSize: '0.75rem', color: '#ccc', marginTop: '6px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
@@ -423,12 +423,12 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         {(currentPredictor.killList.length > 3 || (currentPredictor.extraKillCandidates && currentPredictor.extraKillCandidates.length > 0)) && (
                             <div className="kill-section-challenge" style={{ marginTop: '20px', paddingTop: '20px', borderTop: '1px dashed rgba(255, 77, 77, 0.3)' }}>
                                 <h3 style={{ margin: '0 0 15px 0', fontSize: '1.0rem', color: currentPredictor.killCount > 3 ? '#ff9f43' : '#777', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                    {currentPredictor.killCount > 3 ? '🔥 챌린지 추가 제외 (+2)' : '🔒 챌린지 추가 제외 후보 (+2)'}
+                                    {currentPredictor.killCount > 5 ? '🔥 챌린지 추가 제외 (+5)' : '🔒 챌린지 추가 제외 후보 (+5)'}
                                 </h3>
                                 <div className="kill-list" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                    {currentPredictor.killCount > 3
+                                    {currentPredictor.killCount > 5
                                         ? // Active Challenge Mode: Show actual kills (slice 3 onwards)
-                                        currentPredictor.killList.slice(3).map(num => (
+                                        currentPredictor.killList.slice(5).map(num => (
                                             <div key={num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
                                                 <div className={`mini-ball`} style={{ width: '40px', height: '40px', lineHeight: '38px', fontSize: '1.1rem', background: '#4a1c1c', color: '#ff9f43', textDecoration: 'line-through', border: '1px solid #ff9f43' }}>{num}</div>
                                                 <span style={{ fontSize: '0.75rem', color: '#ff9f43', marginTop: '6px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
@@ -447,14 +447,14 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                         ))
                                     }
                                 </div>
-                                {currentPredictor.killCount <= 3 && (
+                                {currentPredictor.killCount <= 5 && (
                                     <p style={{ fontSize: '0.75rem', color: '#666', marginTop: '10px' }}>* 챌린지 모드 실행 시 제거되는 번호들입니다.</p>
                                 )}
                             </div>
                         )}
 
                         <p style={{ margin: '15px 0 0', fontSize: '0.8rem', color: '#888' }}>
-                            * 위 번호들은 {currentPredictor.killCount > 3 ? '5-KILL' : '3-KILL'} 전략에 의해 이번 예측에서 <strong>100% 제외</strong>됩니다.
+                            * 위 번호들은 {currentPredictor.killCount > 5 ? '10-KILL' : '5-KILL'} 전략에 의해 이번 예측에서 <strong>100% 제외</strong>됩니다.
                         </p>
                     </section>
                 )}
@@ -482,10 +482,10 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     {predictionStatus.isOpen ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', justifyContent: 'center', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
                             <button className="btn-predict-outline" onClick={() => generateNumbers(false)} disabled={isAnalyzing} style={{ flex: 1, padding: '15px' }}>
-                                기본 예측 (3-KILL)
+                                기본 예측 (5-KILL)
                             </button>
                             <button className="btn-predict-outline" onClick={() => generateNumbers(true)} disabled={isAnalyzing} style={{ flex: 1, borderColor: '#ff4d4d', color: '#ff4d4d', background: 'rgba(255,0,0,0.05)', padding: '15px' }}>
-                                🔥 챌린지 (5-KILL)
+                                🔥 챌린지 (10-KILL)
                             </button>
 
                         </div>
@@ -543,14 +543,14 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         💡 로또 Z 인공지능 예측 시스템 가이드
                     </h2>
 
-                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. 3-KILL 전략 (기본 예측)</h3>
+                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. 5-KILL 전략 (기본 예측)</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        단순히 운에 의존하는 것을 넘어, 철저한 통계적 배제 원칙을 적용합니다. <strong>3-KILL 전략</strong>은 과거 수백 회차의 데이터를 기반으로 당첨 확률이 현저히 떨어지는 3개의 고정 번호를 수학적으로 필터링하여 예측 풀에서 영구 제외하는 로또 Z만의 독자적인 핵심 기술입니다. 최근 5주간 가장 뜨거웠던 끝수(Hot Digit)를 분석하고, 그중에서도 힘이 빠진 미지근한 숫자들을 우선 타겟팅합니다. 또한 3주 연속으로 등장한 패턴 번호나 직전 회차의 보너스 번호 등, 통계적으로 연속 출현 확률이 5% 미만인 번호들을 정밀하게 타격하여 100% 제외(KILL) 처리합니다. 이 기본 제외 전략만으로도 기존 무작위 추출 대비 엄청난 경우의 수 단축 효과를 얻을 수 있습니다.
+                        데이터 기반 5개 번호 제외 전략입니다. <strong>5-KILL 전략</strong>은 1211회차 실측 분석 결과 제외 성공률 86~93%를 기록한 핵심 룰들로 구성됩니다. ① 최근 10주 중 6회 이상 과열(92.5%) ② 3주 연속 출현(90.9%) ③ 직전 보너스 번호(86.1%) ④ 최근 5주 중 4회 이상 과열(88.0%) ⑤ ±1 인접번호 2주 연속 포위(87.2%) 순으로 킬 번호를 선정합니다.
                     </p>
 
-                    <h3 style={{ color: '#ff4d4d', fontSize: '1.1rem', marginTop: '20px' }}>2. 5-KILL 전략 (🔥 챌린지 모드)</h3>
+                    <h3 style={{ color: '#ff4d4d', fontSize: '1.1rem', marginTop: '20px' }}>2. 10-KILL 전략 (🔥 챌린지 모드)</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        보다 공격적인 확률 싸움을 원하시는 분들을 위한 하이리스크-하이리턴 모드입니다. 3-KILL 기본 배제 번호에 더해, 최근 10주간 단 한 번도 출현하지 않으면서 동시에 주변 동반 출현(이웃수) 빈도마저 완전히 바닥을 치고 있는 최악의 <strong>콜드 넘버(Coldest Numbers)</strong> 2개를 찾아내어 추가로 날려버립니다. 총 5개의 숫자를 완벽히 배제한 상태로 남은 40개의 최정예 숫자들 사이에서만 스코어링을 진행하므로, 알고리즘 체감 적중률이 극대화되는 것을 경험하실 수 있습니다!
+                        기본 5킬에 더해 5개를 추가로 배제하는 초공격적 모드입니다. ⑥ 2주 연속 출현(86.3%) ⑦ 끝자리 포화 최약체(86.5%) ⑧ 10주+ 미출현 콜드(86.7%) ⑨ 10주 중 5회 이상 과열(86.1%) 룰이 추가 적용됩니다. 총 10개 번호를 완벽히 배제한 상태로 남은 35개의 최정예 숫자들 사이에서 스코어링이 진행됩니다.
                     </p>
 
                     <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>3. 빅데이터 기반 스코어링 분석</h3>
