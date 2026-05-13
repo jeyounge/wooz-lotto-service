@@ -134,6 +134,41 @@ class LottoPredictorV5 extends LottoPredictorV2 {
             }
         }
 
+        // ==========================================
+        // P6. 20주 이상 미출현 콜드 (Fallback)
+        // ==========================================
+        if (kills.size < this.killCount) {
+            for (let n = 1; n <= 45; n++) {
+                if (kills.size >= this.killCount) break;
+                if (!kills.has(n) && this._isColdFor(sorted, n, 20)) {
+                    addKill(n, '❄️ 20주 이상 장기 콜드');
+                }
+            }
+        }
+
+        // ==========================================
+        // P8. 2주 연속 출현 (Fallback)
+        // ==========================================
+        if (kills.size < this.killCount) {
+            for (let n = 1; n <= 45; n++) {
+                if (kills.size >= this.killCount) break;
+                if (!kills.has(n) && sorted[0]?.numbers.includes(n) && sorted[1]?.numbers.includes(n)) {
+                    addKill(n, '🔥 2주 연속 출현');
+                }
+            }
+        }
+
+        // ==========================================
+        // P9. 10주 이상 미출현 콜드 (Fallback)
+        // ==========================================
+        if (kills.size < this.killCount) {
+            for (let n = 1; n <= 45; n++) {
+                if (kills.size >= this.killCount) break;
+                if (!kills.has(n) && this._isColdFor(sorted, n, 10)) {
+                    addKill(n, '❄️ 10주 이상 콜드');
+                }
+            }
+        }
 
         // ==========================================
         // 최종 적용

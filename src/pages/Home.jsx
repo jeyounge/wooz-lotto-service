@@ -324,10 +324,10 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
                             <div style={{ textAlign: 'center' }}>
                                 <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 제외 적중</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate3 >= 80 ? '#00f260' : '#fff' }}>
-                                    {killStats.successRate3}%
+                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#00f260' : '#fff' }}>
+                                    {killStats.successRate5}%
                                 </div>
-                                <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount3}/{killStats.totalCandidates3}개)</div>
+                                <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount5}/{killStats.totalCandidates5}개)</div>
                             </div>
                         </div>
 
@@ -346,7 +346,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                             <td style={{ padding: '8px 5px', color: '#aaa' }}>{r.drw_no}</td>
                                             <td style={{ padding: '8px 5px', textAlign: 'center' }}>
                                                 <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                                    {r.kill3_list && r.kill3_list.map(n => (
+                                                    {r.kill5_list && r.kill5_list.map(n => (
                                                         <span key={n} style={{
                                                             background: r.actual_numbers.includes(n) ? '#ff4d4d' : '#333',
                                                             color: r.actual_numbers.includes(n) ? '#fff' : '#aaa',
@@ -359,7 +359,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                                 </div>
                                             </td>
                                             <td style={{ padding: '8px 5px', textAlign: 'right' }}>
-                                                {r.kill3_success ? '✅' : '❌'}
+                                                {r.kill5_success ? '✅' : '❌'}
                                             </td>
                                         </tr>
                                     ))}
