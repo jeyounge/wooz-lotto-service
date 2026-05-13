@@ -18,12 +18,11 @@ import LottoPredictorV2 from './LottoPredictorV2.js';
  * P10. 최근 10주 중 5회 이상 (86.1%)         ← 챌린지 추가
  */
 class LottoPredictorV5 extends LottoPredictorV2 {
-    constructor(historyData, options = {}) {
+    constructor(historyData) {
         super(historyData);
-        this.killCount = options.killCount || 5;
+        this.killCount = 5;
         this.killList = [];
         this.killReasons = {};
-        this.extraKillCandidates = [];
         this._applyKillStrategyV5();
     }
 
@@ -135,85 +134,6 @@ class LottoPredictorV5 extends LottoPredictorV2 {
             }
         }
 
-        // ==========================================
-        // --- 챌린지 전용 추가 킬 (killCount > 5) ---
-        // ==========================================
-
-        // P6. 2주 연속 출현 (86.3%) - 챌린지 추가
-        if (kills.size < this.killCount) {
-            const r0 = sorted[0]?.numbers || [];
-            const r1 = sorted[1]?.numbers || [];
-            for (let n = 1; n <= 45; n++) {
-                if (kills.size >= this.killCount) break;
-                if (kills.has(n)) continue;
-                if (r0.includes(n) && r1.includes(n)) {
-                    addKill(n, '⚔️ 2주 연속 출현');
-                }
-            }
-        }
-
-        // P7. 끝자리 동일 5주 4회 이상 최약체 (86.5%) - 챌린지 추가
-        if (kills.size < this.killCount) {
-            // 5주 내 각 끝자리 출현 맵 생성
-            const digitCounts = {};
-            const numInDigit = {};
-            sorted.slice(0, 5).forEach(r => {
-                r.numbers.forEach(n => {
-                    const d = n % 10;
-                    digitCounts[d] = (digitCounts[d] || 0) + 1;
-                    numInDigit[n] = (numInDigit[n] || 0) + 1;
-                });
-            });
-
-            // 포화된 끝자리(4회+)의 가장 약한 번호 킬
-            const saturatedDigits = Object.entries(digitCounts)
-                .filter(([, c]) => c >= 4)
-                .sort((a, b) => b[1] - a[1])
-                .map(([d]) => parseInt(d));
-
-            for (const digit of saturatedDigits) {
-                if (kills.size >= this.killCount) break;
-                // 해당 끝자리 번호들 중 최약체
-                const candidates = [];
-                for (let n = 1; n <= 45; n++) {
-                    if (n % 10 === digit && !kills.has(n) && !this._isHotSafetyCheck(sorted, n)) {
-                        candidates.push(n);
-                    }
-                }
-                candidates.sort((a, b) => (numInDigit[a] || 0) - (numInDigit[b] || 0));
-                if (candidates[0]) addKill(candidates[0], `🔢 끝자리 ${digit} 포화 최약체`);
-            }
-        }
-
-        // P8. 10주 이상 미출현 콜드 + 핫 아닌 것 (86.7%)
-        if (kills.size < this.killCount) {
-            const coldNums = [];
-            for (let n = 1; n <= 45; n++) {
-                if (kills.has(n)) continue;
-                if (this._isHotSafetyCheck(sorted, n)) continue;
-                if (this._isColdFor(sorted, n, 10)) {
-                    const lastSeen = this._countInLast(sorted, n, 30);
-                    coldNums.push({ n, lastSeen });
-                }
-            }
-            // 가장 오래 안 나온 순
-            coldNums.sort((a, b) => a.lastSeen - b.lastSeen);
-            for (const { n } of coldNums) {
-                if (kills.size >= this.killCount) break;
-                addKill(n, `🧊 10주+ 미출현 콜드`);
-            }
-        }
-
-        // P9. 최근 10주 중 5회 이상 (86.1%) - 챌린지 마지막
-        if (kills.size < this.killCount) {
-            for (let n = 1; n <= 45; n++) {
-                if (kills.size >= this.killCount) break;
-                if (kills.has(n)) continue;
-                if (this._countInLast(sorted, n, 10) >= 5) {
-                    addKill(n, '🔥 10주 중 5회+(과열)');
-                }
-            }
-        }
 
         // ==========================================
         // 최종 적용
@@ -224,40 +144,13 @@ class LottoPredictorV5 extends LottoPredictorV2 {
             this.scores[k] = -9999;
         });
         this.killReasons = killReasons;
-
-        // 챌린지 미사용 모드에서 후보 노출용
-        if (this.killCount <= 5) {
-            this.extraKillCandidates = this._buildExtraKillCandidates(sorted, kills);
-        }
-    }
-
-    _buildExtraKillCandidates(sorted, currentKills) {
-        const candidates = [];
-        const r0 = sorted[0]?.numbers || [];
-        const r1 = sorted[1]?.numbers || [];
-
-        for (let n = 1; n <= 45; n++) {
-            if (currentKills.has(n)) continue;
-            if (candidates.length >= 5) break;
-
-            // 2연속 + 콜드 후보
-            if (r0.includes(n) && r1.includes(n)) {
-                candidates.push({ num: n, reason: '2주 연속 출현', rate: '86%' });
-                continue;
-            }
-            if (this._isColdFor(sorted, n, 10) && !this._isHotSafetyCheck(sorted, n)) {
-                candidates.push({ num: n, reason: '10주+ 미출현 콜드', rate: '87%' });
-            }
-        }
-        return candidates;
     }
 
     analyzeSelection(numbers) {
         const baseAnalysis = super.analyzeSelection(numbers);
-        const modeLabel = this.killCount >= 10 ? '10-KILL 챌린지' : '5-KILL 기본';
         const killMsg = this.killList.map(k => `${k}(${this.killReasons[k]})`).join(', ');
         return [
-            `🛡️ V5 ${modeLabel} 전략: [${killMsg}] 제외`,
+            `🛡️ V5 5-KILL 전략: [${killMsg}] 제외`,
             ...baseAnalysis
         ];
     }

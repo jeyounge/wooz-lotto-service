@@ -2,52 +2,71 @@ class LottoPredictorV2 {
     constructor(historyData) {
         this.history = historyData;
 
-        // Configuration for Weights (Lotto 2.1)
-        this.WEIGHT_LAST_5 = 40;  // Reduced slightly from 50
-        this.WEIGHT_LAST_10 = 10; // New: Recent 10 context
-        this.WEIGHT_LAST_30 = 20;
-
         this.scores = {};
         this.excludedNumbers = [];
+        this.bucketMap = {};
         this.init();
     }
 
     init() {
-        // Initialize scores with base value (Increased from 20 to 40 to give cold numbers more chance)
-        for (let i = 1; i <= 45; i++) this.scores[i] = 40;
+        if (!this.history || this.history.length === 0) {
+            for (let i = 1; i <= 45; i++) this.scores[i] = 40;
+            return;
+        }
 
-        if (!this.history || this.history.length === 0) return;
-
-        // Sort history by Date Descending (Newest first)
         const sorted = [...this.history].sort((a, b) => b.drwNo - a.drwNo);
 
-        // 1. Scoring (Weights)
-        // A. Last 5 (Hot)
-        sorted.slice(0, 5).forEach(round => {
-            round.numbers.forEach(n => this.scores[n] += this.WEIGHT_LAST_5);
-        });
-
-        // B. Last 10 (Semi-Hot)
-        sorted.slice(0, 10).forEach(round => {
-            round.numbers.forEach(n => this.scores[n] += this.WEIGHT_LAST_10);
-        });
-
-        // C. Last 30 (Trend)
-        sorted.slice(0, 30).forEach(round => {
-            round.numbers.forEach(n => this.scores[n] += this.WEIGHT_LAST_30);
-        });
-
-        // D. Cold Numbers (Haven't appeared in last 15)
-        const recent15 = new Set();
-        sorted.slice(0, 15).forEach(r => r.numbers.forEach(n => recent15.add(n)));
+        // 1. 버킷 분류 (최근 출현 기준)
+        const buckets = {
+            hot: [],    // 1~5주 (0~4)
+            warm: [],   // 6~10주 (5~9)
+            cool: [],   // 11~15주 (10~14)
+            cold: []    // 16주 이상 (15+)
+        };
 
         for (let i = 1; i <= 45; i++) {
-            if (!recent15.has(i)) {
-                this.scores[i] += 15; // Boost cold numbers slightly to prevent total starvation
+            let lastSeenIndex = -1;
+            for (let j = 0; j < sorted.length; j++) {
+                if (sorted[j].numbers.includes(i)) {
+                    lastSeenIndex = j;
+                    break;
+                }
+            }
+
+            if (lastSeenIndex === -1 || lastSeenIndex >= 15) {
+                buckets.cold.push(i);
+                this.bucketMap[i] = 'cold';
+            } else if (lastSeenIndex < 5) {
+                buckets.hot.push(i);
+                this.bucketMap[i] = 'hot';
+            } else if (lastSeenIndex < 10) {
+                buckets.warm.push(i);
+                this.bucketMap[i] = 'warm';
+            } else if (lastSeenIndex < 15) {
+                buckets.cool.push(i);
+                this.bucketMap[i] = 'cool';
             }
         }
 
-        // 2. Exclusion: 3-Consecutive Weeks (Keep this, it's a strong negative signal)
+        // 2. 동적 가중치(Score) 배분
+        // 목표 확률 (1~5주: 50.6%, 6~10주: 27.1%, 11~15주: 12.1%, 16주+: 10.3%)
+        const targetScores = {
+            hot: 506,
+            warm: 271,
+            cool: 121,
+            cold: 103
+        };
+
+        for (let i = 1; i <= 45; i++) {
+            const bucketType = this.bucketMap[i];
+            const bucketSize = buckets[bucketType].length;
+            
+            // 버킷에 배당된 총 점수를 버킷 내의 번호 개수로 N분의 1 분배
+            // 최소 점수 보장을 위해 기본 10점 추가
+            this.scores[i] = bucketSize > 0 ? (targetScores[bucketType] / bucketSize) + 10 : 10;
+        }
+
+        // 3. Exclusion: 3-Consecutive Weeks (Keep this, it's a strong negative signal)
         if (sorted.length >= 3) {
             const r1 = sorted[0].numbers;
             const r2 = sorted[1].numbers;
@@ -152,6 +171,12 @@ class LottoPredictorV2 {
         const stats = this.calculateStats(numbers);
         if (stats.ac < 5) return false;
 
+        // 6. 황금 비율 강제 필터링 (1~5주 출현 번호가 2~4개 포함되어야 함)
+        if (this.bucketMap && Object.keys(this.bucketMap).length > 0) {
+            const hotCount = numbers.filter(n => this.bucketMap[n] === 'hot').length;
+            if (hotCount < 2 || hotCount > 4) return false;
+        }
+
         return true;
     }
 
@@ -170,10 +195,10 @@ class LottoPredictorV2 {
     analyzeSelection(numbers) {
         const stats = this.calculateStats(numbers);
         return [
-            `🚀 Lotto 2.1 업그레이드 알고리즘 적용`,
-            `⚖️ 합계 구간 확장 (80~200) 및 Cold Number 가중치 반영`,
+            `🚀 Lotto Z 다이내믹 가중치 알고리즘 (V2.5)`,
+            `⚖️ 황금 비율 최적화 완료 (Hot 번호 2~4개 포함)`,
             `📊 AC:${stats.ac}, 합계:${stats.sum}`,
-            `🛡️ 과거 1등 완전중복만 제외 (2/3등 가능성 확대)`
+            `🛡️ 과거 1등 완전중복 제외, 3연속 번호 제한`
         ];
     }
 
