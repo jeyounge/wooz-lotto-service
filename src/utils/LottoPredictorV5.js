@@ -1,33 +1,32 @@
 import LottoPredictorV2 from './LottoPredictorV2.js';
 
 /**
- * LottoPredictorV5 — 실측 백테스트 기반 최종 개선판 (v5.2)
+ * LottoPredictorV5 — v5.3 (4킬 최적 기대값 전략)
  *
- * ▶ 300회차 백테스트 비교 결과:
- *   구버전  (5킬 고정, P1~P9)   : 46% ← 랜덤과 동일
- *   v5.1   (4킬, P_A/B/C/D)   : 54% ← P_C가 실패 누적
- *   v5.2   (최대 2킬, P_A/D)   : 78% ← 채택
- *   무작위 기준선               : 47%
+ * ▶ 1211회차 전체 패턴 분석 결과:
+ *   - 로또 번호는 통계적으로 거의 완벽한 무작위
+ *   - 유의미한 패턴: "직전 보너스 → 다음 보너스 미반복" (97%, z=10.6) 하나뿐
+ *   - 직전 보너스 → 본번호 미출현: 86.3% (기준선 86.7%와 동일, z=-0.39)
+ *   - 냉각/연속 등 모든 패턴: z < 2.0 (통계적 노이즈)
  *
- * ▶ 핵심 원리:
- *   - 킬 수가 적을수록 실패 확률이 기하급수적으로 줄어든다
- *   - 콜드 번호 킬(P_C)은 "20주 안 나왔으니 다음에도 안 나온다"는
- *     도박사의 오류(Gambler's Fallacy)에 기반 → 제거
- *   - P_A(2주 연속)는 진짜 패턴 신호, P_D(직전 보너스)는 소폭 양의 신호
- *   - 조건 미충족 시 0킬도 허용 (억지로 채우지 않음)
+ * ▶ 킬 수별 기대효과 (성공률 × 공간축소율):
+ *   2킬: 75% × 25% = 19.0%
+ *   3킬: 66% × 36% = 23.6%
+ *   4킬: 55% × 45% = 24.7% ← 최고점 (채택)
+ *   5킬: 46% × 53% = 24.5% (동전 던지기 수준)
+ *   6킬: 40% × 60% = 23.9%
  *
- * ✅ 유지 규칙:
- *   P_A. 2주 연속 출현  — 직전 2회 모두 등장한 번호 (실측 92%)
- *   P_D. 직전 보너스    — 보너스 번호는 다음 회차 본번호에 드물게 등장 (실측 87.5%)
+ * ▶ 4킬 채택 근거:
+ *   어떤 룰도 진짜 통계적 신호가 없으므로, 순수 기대값으로 최적점 결정.
+ *   4킬 = 기대 공간축소 24.7%로 전 구간 최고, 성공 시 C(41,6)=4.5M 조합.
+ *   5킬은 기대값이 오히려 낮고 성공률이 46%로 동전 던지기 수준이라 제외.
  *
- * ❌ 제거 규칙 (역효과 또는 의미 없음):
- *   P_C. 20주+ 콜드킬   — 매 회차 2~3개씩 킬해 실패 누적 (전략 B 78% vs A 54%)
- *   P1.  10주 6회+       — 실측 75% (해롭다)
- *   P4.  5주 4회+        — 실측 57% (매우 해롭다)
- *   P5.  ±1 인접 2주     — 실측 84% (베이스라인 이하)
- *   P9.  10주+ 콜드      — 실측 87% (랜덤과 동일)
- *
- * ▶ 킬 수: 최대 2개, 조건 없으면 0개
+ * ▶ 룰 선택 기준 (모두 기준선 수준이므로 "덜 해로운" 순):
+ *   1순위: 직전 보너스 (매 회차 확정 발동, 86.3%)
+ *   2순위: 2주 연속 출현 (발동 시 86.2%, 발동 안 하면 다음으로)
+ *   3순위: 20주+ 미출현 (기준선, 매 회차 1~2개 존재)
+ *   4순위: 10주+ 미출현 (기준선, 4킬 채우는 패딩 역할)
+ *   제외: P1(75% 해로움), P4(57% 매우 해로움), P5(84% 해로움)
  */
 class LottoPredictorV5 extends LottoPredictorV2 {
     constructor(historyData) {
@@ -43,7 +42,7 @@ class LottoPredictorV5 extends LottoPredictorV2 {
         const sorted = [...this.history].sort((a, b) => b.drwNo - a.drwNo);
         const kills = new Set();
         const killReasons = {};
-        const MAX_KILLS = 2;
+        const MAX_KILLS = 4;
 
         const addKill = (num, reason) => {
             if (kills.size >= MAX_KILLS) return;
@@ -53,36 +52,38 @@ class LottoPredictorV5 extends LottoPredictorV2 {
             }
         };
 
-        // ============================================================
-        // P_A. 2주 연속 출현 (실측 92.0%)
-        //      직전 2회 모두 포함된 번호 — 단기 집중 출현의 강한 신호
-        // ============================================================
+        const isColdFor = (n, weeks) => {
+            for (let k = 0; k < weeks && k < sorted.length; k++) {
+                if (sorted[k].numbers.includes(n)) return false;
+            }
+            return true;
+        };
+
+        // ── 1순위: 직전 보너스 (매 회차 발동)
+        const bonus0 = sorted[0]?.bonus;
+        if (bonus0) addKill(bonus0, '🎯 직전 보너스');
+
+        // ── 2순위: 2주 연속 출현
         if (sorted.length >= 2) {
-            const w0 = sorted[0].numbers;
-            const w1 = sorted[1].numbers;
+            const w0 = sorted[0].numbers, w1 = sorted[1].numbers;
             for (let n = 1; n <= 45; n++) {
                 if (kills.size >= MAX_KILLS) break;
-                if (w0.includes(n) && w1.includes(n)) {
-                    addKill(n, '🔥 2주 연속 출현 (92%)');
-                }
+                if (w0.includes(n) && w1.includes(n)) addKill(n, '🔥 2주 연속 출현');
             }
         }
 
-        // ============================================================
-        // P_D. 직전 보너스 번호 (실측 87.5%)
-        //      보너스는 다음 회차 본번호에 잘 등장하지 않는 경향
-        //      P_A가 MAX_KILLS를 채우지 못했을 때만 사용
-        // ============================================================
-        if (kills.size < MAX_KILLS) {
-            const lastBonus = sorted[0]?.bonus;
-            if (lastBonus && !kills.has(lastBonus)) {
-                addKill(lastBonus, '🎯 직전 보너스 (87.5%)');
-            }
+        // ── 3순위: 20주+ 미출현 (기준선 수준, 패딩)
+        for (let n = 1; n <= 45; n++) {
+            if (kills.size >= MAX_KILLS) break;
+            if (isColdFor(n, 20)) addKill(n, '❄️ 20주+ 미출현');
         }
 
-        // ============================================================
-        // 최종 적용 — 조건 미충족 시 킬 없이 그대로 진행
-        // ============================================================
+        // ── 4순위: 10주+ 미출현 (기준선 수준, 4킬 보장 패딩)
+        for (let n = 1; n <= 45; n++) {
+            if (kills.size >= MAX_KILLS) break;
+            if (isColdFor(n, 10)) addKill(n, '🌨️ 10주+ 미출현');
+        }
+
         this.killList = Array.from(kills);
         this.killList.forEach(k => {
             if (!this.excludedNumbers.includes(k)) this.excludedNumbers.push(k);
@@ -93,12 +94,11 @@ class LottoPredictorV5 extends LottoPredictorV2 {
 
     analyzeSelection(numbers) {
         const baseAnalysis = super.analyzeSelection(numbers);
-        const killCount = this.killList.length;
         const killMsg = this.killList.length > 0
             ? this.killList.map(k => `${k}(${this.killReasons[k]})`).join(', ')
-            : '없음 (이번 회차 킬 조건 미충족)';
+            : '없음';
         return [
-            `🛡️ V5 ${killCount}킬 전략: [${killMsg}] 제외`,
+            `🛡️ V5 ${this.killList.length}킬: [${killMsg}] 제외 → ${45 - this.killList.length}개 풀`,
             ...baseAnalysis
         ];
     }
