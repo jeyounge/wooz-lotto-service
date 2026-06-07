@@ -308,7 +308,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                 최근 진행된 {lastRound.drwNo}회 추첨 결과, 당첨 번호는 <strong>{lastRound.numbers.join(', ')}</strong> 번이고 보너스 번호는 <strong>{lastRound.bonus}</strong> 번이 등장했습니다.
                                 이번 회차에서는 총 <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : 'N명'}</strong>의 1등 당첨자가 배출되어 각각 약 <strong>{lastRound.firstWinamnt > 0 ? `${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}원` : '집계 중'}</strong>의 당첨금을 수령하게 되었습니다.
                                 로또 Z의 빅데이터 AI 엔진은 즉각적으로 {lastRound.drwNo}회차 당첨 결과의 모서리 패턴, 끝수 분포 빈도, 콜드 넘버(장기 미출현) 해소 여부 등의 심층 통계 데이터를 메인 DB에 성공적으로 학습 완료했습니다.
-                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 5-KILL 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
+                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 AI 킬 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
                             </div>
                         </div>
                     )}
@@ -323,7 +323,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
                         <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
                             <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>5-KILL 제외 적중</div>
+                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>킬 번호 제외 적중</div>
                                 <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#00f260' : '#fff' }}>
                                     {killStats.successRate5}%
                                 </div>
@@ -336,7 +336,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                                 <thead>
                                     <tr style={{ borderBottom: '1px solid #444', color: '#888' }}>
                                         <th style={{ padding: '5px', textAlign: 'left' }}>회차</th>
-                                        <th style={{ padding: '5px' }}>5-KILL</th>
+                                        <th style={{ padding: '5px' }}>킬 번호</th>
                                         <th style={{ padding: '5px', textAlign: 'right' }}>결과</th>
                                     </tr>
                                 </thead>
@@ -373,13 +373,13 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                 {currentPredictor.killList && currentPredictor.killList.length > 0 && (
                     <section className="kill-banner fade-in" style={{ margin: '0 20px 20px', padding: '20px', background: 'rgba(255, 0, 0, 0.08)', border: '1px solid rgba(255, 0, 0, 0.2)', borderRadius: '16px', textAlign: 'center' }}>
 
-                        {/* CORE 5-KILL */}
+                        {/* CORE KILL (동적 킬 수) */}
                         <div className="kill-section-core">
                             <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#ff4d4d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                ☠️ 로또 Z 핵심 기법 [5-KILL]
+                                ☠️ 로또 Z 핵심 기법 [{currentPredictor.killList.length}-KILL]
                             </h3>
                             <div className="kill-list" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                {currentPredictor.killList.slice(0, 5).map(num => (
+                                {currentPredictor.killList.map(num => (
                                     <div key={num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
                                         <div className={`mini-ball`} style={{ width: '40px', height: '40px', lineHeight: '38px', fontSize: '1.1rem', background: '#2a2a2a', color: '#ff6b6b', textDecoration: 'line-through', border: '1px solid #ff4d4d' }}>{num}</div>
                                         <span style={{ fontSize: '0.75rem', color: '#ccc', marginTop: '6px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
@@ -391,7 +391,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         </div>
 
                         <p style={{ margin: '15px 0 0', fontSize: '0.8rem', color: '#888' }}>
-                            * 위 번호들은 5-KILL 전략에 의해 이번 예측에서 <strong>100% 제외</strong>됩니다.
+                            * 위 번호들은 AI 킬 전략에 의해 이번 예측에서 <strong>100% 제외</strong>되어, 남은 {45 - currentPredictor.killList.length}개 숫자로 조합을 생성합니다.
                         </p>
                     </section>
                 )}
@@ -419,7 +419,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     {predictionStatus.isOpen ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', justifyContent: 'center', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
                             <button className="btn-predict-outline" onClick={() => generateNumbers()} disabled={isAnalyzing} style={{ flex: 1, padding: '15px' }}>
-                                예측 번호 생성 (5-KILL 적용)
+                                예측 번호 생성 (AI 킬 적용)
                             </button>
                         </div>
                     ) : (
@@ -476,14 +476,14 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         💡 로또 Z 인공지능 예측 시스템 가이드
                     </h2>
 
-                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. 5-KILL 전략 (기본 예측)</h3>
+                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. AI 킬(KILL) 전략 (기본 예측)</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        데이터 기반 5개 번호 제외 전략입니다. <strong>5-KILL 전략</strong>은 1211회차 실측 분석 결과 제외 성공률 86~93%를 기록한 핵심 룰들로 구성됩니다. ① 최근 10주 중 6회 이상 과열(92.5%) ② 3주 연속 출현(90.9%) ③ 직전 보너스 번호(86.1%) ④ 최근 5주 중 4회 이상 과열(88.0%) ⑤ ±1 인접번호 2주 연속 포위(87.2%) 순으로 킬 번호를 선정합니다.
+                        데이터 기반 번호 제외 전략입니다. 로또 Z는 1,227회차 전체 당첨 데이터를 전수 분석한 결과, "킬 개수가 많을수록 좋다"는 통념을 버리고 <strong>성공률 × 경우의 수 절감률(기대효과)이 가장 높은 4개 제외</strong>를 기본값으로 채택했습니다(4킬 기대효과 24.7%로 전 구간 최고). 우선순위는 ① 직전 보너스 번호 ② 2주 연속 출현 번호 ③ 20주 이상 장기 미출현 ④ 10주 이상 미출현 순이며, 조건에 따라 최대 4개를 제외하고 남은 41개 숫자로 조합을 생성합니다.
                     </p>
 
                     <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>2. 다이내믹 버킷 가중치 스코어링 시스템</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        로또 Z의 AI 모델은 동행복권의 역대 1등 당첨 번호 빅데이터를 분석하여 "황금 비율"을 도출했습니다. 앞서 5-KILL 기법으로 제외된 번호들을 뺀 나머지 40개의 번호를 최근 출현 주차에 따라 4개의 그룹(Hot, Warm, Cool, Cold)으로 분류합니다. 각 그룹이 역대 당첨 번호에서 차지하는 실제 확률(예: 최근 5주 출현 번호 50.6%)에 기반하여 동적으로 가중치를 할당합니다. 이렇게 선별된 추천 번호는 단순 난수가 아닌, 가장 이상적인 역대 1등 당첨 패턴에 부합하는 조합입니다.
+                        로또 Z의 AI 모델은 역대 1등 당첨 번호 빅데이터를 분석하여 "황금 비율"을 도출했습니다. 앞서 킬 기법으로 제외된 번호들을 뺀 나머지 41개의 번호를 최근 출현 주차에 따라 4개의 그룹(Hot, Warm, Cool, Cold)으로 분류합니다. 각 그룹이 역대 당첨 번호에서 차지하는 실제 확률(예: 최근 5주 출현 번호 51.1%)에 기반하여 동적으로 가중치를 할당합니다. 이렇게 선별된 추천 번호는 단순 난수가 아닌, 가장 이상적인 역대 1등 당첨 패턴에 부합하는 조합입니다.
                     </p>
 
                     <div style={{ background: 'rgba(5, 117, 230, 0.1)', border: '1px solid rgba(5, 117, 230, 0.3)', padding: '15px', borderRadius: '8px', marginTop: '25px', fontSize: '0.85rem' }}>

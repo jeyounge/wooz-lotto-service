@@ -283,7 +283,7 @@ export default function MyPage({ session, pastDraws, handleLogout }) {
                                         alignItems: 'center',
                                         gap: '4px'
                                     }}>
-                                        🔥 5-KILL Challenge
+                                        🔥 킬 전략 적용
                                     </span>
                                 )}
                             </div>
