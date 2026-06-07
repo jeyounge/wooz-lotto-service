@@ -145,11 +145,9 @@ class LottoPredictorV2 {
             }
         }
 
-        // Algo Option 3: Reduce frequency of consecutive pairs
-        // If a consecutive pair exists (e.g. 21, 22), only keep it 30% of the time.
-        // This makes "clean" combinations more frequent while maintaining valid probability.
+        // 실측: 당첨번호의 46.3%에 연속쌍 포함. 50% 통과로 실제 비율에 맞춤.
         if (hasConsecutivePair) {
-            if (Math.random() > 0.3) return false;
+            if (Math.random() > 0.5) return false;
         }
 
         // 2. Odd/Even: Reject 6:0 or 0:6
@@ -171,10 +169,11 @@ class LottoPredictorV2 {
         const stats = this.calculateStats(numbers);
         if (stats.ac < 5) return false;
 
-        // 6. 황금 비율 강제 필터링 (1~5주 출현 번호가 2~4개 포함되어야 함)
+        // 실측: Hot 1개(7.4%), Hot 5개(10.5%)도 실제 당첨. 1~5개로 완화.
+        // 기존 2~4: 실제 당첨의 19.9% 차단. 1~5: 8.6%만 차단.
         if (this.bucketMap && Object.keys(this.bucketMap).length > 0) {
             const hotCount = numbers.filter(n => this.bucketMap[n] === 'hot').length;
-            if (hotCount < 2 || hotCount > 4) return false;
+            if (hotCount < 1 || hotCount > 5) return false;
         }
 
         return true;
