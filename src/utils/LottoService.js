@@ -54,14 +54,14 @@ export const LottoService = {
 
     fetchRound: async (drwNo) => {
         localStorage.setItem('lastLottoFetchAttempt', Date.now().toString());
-        console.log(`[LottoService] Scraping Round ${drwNo} Detail...`);
+        console.log(`[LottoService] Fetching Round ${drwNo} (smok95 JSON)...`);
 
         try {
-            // Use local proxy path (configured in vite.config.js and vercel.json)
-            // https://data.soledot.com/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
-            // -> /api/lotto/lottowinnumberdetail/fo/1210/lottowinnumberdetailview.sd
+            // smok95 GitHub Pages 정적 JSON (soledot 대체)
+            // https://smok95.github.io/lotto/results/1235.json
+            // -> /api/lottodata/1235.json  (프록시: vite.config.js / vercel.json)
             const timeHash = Math.floor(Date.now() / 600000); // 10 minutes cache
-            const url = `/api/lotto/lottowinnumberdetail/fo/${drwNo}/lottowinnumberdetailview.sd?_t=${timeHash}`;
+            const url = `/api/lottodata/${drwNo}.json?_t=${timeHash}`;
 
             const controller = new AbortController();
             const timeoutId = setTimeout(() => controller.abort(), 10000);
@@ -72,94 +72,53 @@ export const LottoService = {
             });
             clearTimeout(timeoutId);
 
-            if (!response.ok) throw new Error(`HTTP Error ${response.status}`);
-
-            const htmlText = await response.text();
-            const parser = new DOMParser();
-            const doc = parser.parseFromString(htmlText, 'text/html');
-
-            // --- Selectors ---
-
-            // Date: <th>발표일</th>
-            let drwNoDate = '';
-            const ths = doc.querySelectorAll('th');
-            ths.forEach(th => {
-                if (th.textContent.includes('발표일')) {
-                    drwNoDate = th.nextElementSibling?.textContent?.trim();
-                }
-            });
-
-            // Numbers: .circleNumber
-            const numEls = doc.querySelectorAll('.circleNumber');
-            const numbers = [];
-            let bonus = 0;
-            numEls.forEach((el, idx) => {
-                const num = parseInt(el.textContent.trim());
-                if (idx < 6) numbers.push(num);
-                else bonus = num; // 7th ball is bonus
-            });
-
-            if (numbers.length === 0) {
-                console.warn('[LottoService] No numbers found. Page might be empty or restricted.');
+            // 아직 개최 전인 회차는 404 → 조용히 null 반환
+            if (!response.ok) {
+                console.warn(`[LottoService] Round ${drwNo} not available yet (HTTP ${response.status}).`);
                 return null;
             }
 
-            // Detailed Stats
-            let totalSellAmnt = 0;
-            let firstHow = '';
-            let ranks = {};
+            const data = await response.json();
 
-            const rows = doc.querySelectorAll('table.table-bordered tr');
-            rows.forEach(row => {
-                const thText = row.querySelector('th')?.textContent?.trim() || '';
-                const td = row.querySelector('td');
-                const tdText = td?.textContent?.trim() || '';
+            if (!data.numbers || !Array.isArray(data.numbers) || data.numbers.length < 6) {
+                console.warn('[LottoService] Invalid data structure.', data);
+                return null;
+            }
 
-                if (thText.includes('로또 총 구매금액')) {
-                    totalSellAmnt = parseInt(tdText.replace(/[^0-9]/g, '')) || 0;
-                }
-                else if (thText.includes('자동/수동/반자동')) {
-                    firstHow = tdText.replace(/\s+/g, ' '); // Clean whitespace
-                }
-                else if (['1등', '2등', '3등', '4등', '5등'].includes(thText)) {
-                    const rankNum = parseInt(thText.replace('등', ''));
-                    const spans = td.querySelectorAll('span.text-success');
-                    // Usually: [0] Count, [1] 1-person-prize
-                    if (spans.length >= 2) {
-                        ranks[rankNum] = {
-                            count: parseInt(spans[0].textContent.replace(/[^0-9]/g, '')) || 0,
-                            prize: parseInt(spans[1].textContent.replace(/[^0-9]/g, '')) || 0
-                        };
-                    }
-                }
-            });
+            // divisions: [1등, 2등, 3등, 4등, 5등] { prize, winners }
+            const div = Array.isArray(data.divisions) ? data.divisions : [];
+            const drwNoDate = data.date ? String(data.date).split('T')[0] : '';
+            const wc = data.winners_combination || {};
+            const firstHow = (wc.auto != null || wc.manual != null)
+                ? `자동 ${wc.auto ?? 0} / 수동 ${wc.manual ?? 0}`
+                : '';
 
             const result = {
                 drwNo: parseInt(drwNo, 10),
                 drwNoDate,
-                numbers,
-                bonus,
-                firstWinamnt: ranks[1]?.prize || 0,
-                firstPrzwnerCo: ranks[1]?.count || 0,
+                numbers: [...data.numbers].sort((a, b) => a - b),
+                bonus: data.bonus_no,
+                firstWinamnt: div[0]?.prize || 0,
+                firstPrzwnerCo: div[0]?.winners || 0,
 
                 // Detailed Fields for DB
-                totalSellAmnt,
+                totalSellAmnt: data.total_sales_amount || 0,
                 firstHow,
-                secondWinAmnt: ranks[2]?.prize || 0,
-                secondPrzwnerCo: ranks[2]?.count || 0,
-                thirdWinAmnt: ranks[3]?.prize || 0,
-                thirdPrzwnerCo: ranks[3]?.count || 0,
-                fourthWinAmnt: ranks[4]?.prize || 50000, // Default fixed prize
-                fourthPrzwnerCo: ranks[4]?.count || 0,
-                fifthWinAmnt: ranks[5]?.prize || 5000,   // Default fixed prize
-                fifthPrzwnerCo: ranks[5]?.count || 0,
+                secondWinAmnt: div[1]?.prize || 0,
+                secondPrzwnerCo: div[1]?.winners || 0,
+                thirdWinAmnt: div[2]?.prize || 0,
+                thirdPrzwnerCo: div[2]?.winners || 0,
+                fourthWinAmnt: div[3]?.prize || 50000, // Default fixed prize
+                fourthPrzwnerCo: div[3]?.winners || 0,
+                fifthWinAmnt: div[4]?.prize || 5000,   // Default fixed prize
+                fifthPrzwnerCo: div[4]?.winners || 0,
             };
 
-            console.log('[LottoService] Scraped Data:', result);
+            console.log('[LottoService] Fetched Data:', result);
             return result;
 
         } catch (error) {
-            console.error('[LottoService] Failed scrape:', error);
+            console.error('[LottoService] Failed fetch:', error);
             return null;
         }
     }

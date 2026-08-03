@@ -6,6 +6,13 @@ export default defineConfig({
   plugins: [react()],
   server: {
     proxy: {
+      // 로또 당첨번호 소스 (smok95 GitHub Pages, JSON) — soledot 대체
+      '/api/lottodata': {
+        target: 'https://smok95.github.io',
+        changeOrigin: true,
+        rewrite: (path) => path.replace(/^\/api\/lottodata/, '/lotto/results'),
+        secure: true,
+      },
       '/api/lotto': {
         target: 'https://data.soledot.com',
         changeOrigin: true,

@@ -29,6 +29,10 @@
   ],
   "rewrites": [
     {
+      "source": "/api/lottodata/:path*",
+      "destination": "https://smok95.github.io/lotto/results/:path*"
+    },
+    {
       "source": "/api/lotto/:path*",
       "destination": "https://data.soledot.com/:path*"
     },
