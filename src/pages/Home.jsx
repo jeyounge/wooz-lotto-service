@@ -143,7 +143,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         setIsAnalyzing(true);
 
         setTimeout(async () => {
-            const result = currentPredictor.predict();
+            const result = currentPredictor.generate();
             const calculatedScores = [];
 
             setNumbers(result.numbers);
