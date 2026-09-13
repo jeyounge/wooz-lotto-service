@@ -5,6 +5,8 @@ import { LottoService } from './utils/LottoService'
 import initialLottoHistory from './data/lottoHistory.json'
 import { ResultProcessor } from './utils/ResultProcessor'
 
+const JSON_LATEST_ROUND = initialLottoHistory.reduce((m, r) => Math.max(m, r.drwNo), 0)
+
 // Pages
 import Home from './pages/Home'
 import MyPage from './pages/MyPage'
@@ -17,6 +19,7 @@ import PatchNotesPage from './pages/PatchNotesPage'
 import ArticlesPage from './pages/ArticlesPage'
 import ArticleDetailPage from './pages/ArticleDetailPage'
 import GuidePage from './pages/GuidePage'
+import ToolsPage from './pages/ToolsPage'
 
 import './App.css'
 
@@ -87,108 +90,100 @@ function App() {
 
 
   // --- Auto-Update Official Draws ---
+  // The engine reads the full draw history, so a missing round silently skews it.
+  // Pull every DB round newer than the bundled JSON, then fetch any round still missing
+  // (the old code fetched only the single "expected" round and left 1228~1235 out).
   useEffect(() => {
+    const mergeDraws = (prev, incoming) => {
+      if (!incoming.length) return prev;
+      const ids = new Set(incoming.map(d => d.drwNo));
+      return [...incoming, ...prev.filter(d => !ids.has(d.drwNo))].sort((a, b) => b.drwNo - a.drwNo);
+    };
+
+    const syncRoundToDb = async (r) => {
+      try {
+        const { error } = await supabase.from('lotto_history').upsert({
+          drw_no: r.drwNo,
+          drw_date: r.drwNoDate,
+          numbers: r.numbers,
+          bonus: r.bonus,
+          first_win_amnt: r.firstWinamnt,
+          first_przwner_co: r.firstPrzwnerCo,
+          second_win_amnt: r.secondWinAmnt,
+          second_przwner_co: r.secondPrzwnerCo,
+          third_win_amnt: r.thirdWinAmnt,
+          third_przwner_co: r.thirdPrzwnerCo,
+          fourth_win_amnt: r.fourthWinAmnt,
+          fourth_przwner_co: r.fourthPrzwnerCo,
+          fifth_win_amnt: r.fifthWinAmnt,
+          fifth_przwner_co: r.fifthPrzwnerCo,
+        }, { onConflict: 'drw_no' });
+        if (error) console.error('Failed to sync round to DB:', error);
+      } catch (err) {
+        console.error('DB Sync Exception:', err);
+      }
+    };
+
     const checkForUpdates = async () => {
-      let latestKnownRound = pastDraws.length > 0 ? pastDraws[0].drwNo : 0;
-      // 1. First, try to sync recent rounds from DB (source of truth)
+      let working = [...initialLottoHistory];
+
+      // 1. DB rounds newer than the bundled JSON (+ the last few JSON rounds for late prize data)
       try {
         const { data: dbRounds, error: dbErr } = await supabase
           .from('lotto_history')
           .select('drw_no, drw_date, numbers, bonus, first_win_amnt, first_przwner_co, second_win_amnt, second_przwner_co, third_win_amnt, third_przwner_co, fourth_win_amnt, fourth_przwner_co, fifth_win_amnt, fifth_przwner_co')
+          .gte('drw_no', JSON_LATEST_ROUND - 4)
           .order('drw_no', { ascending: false })
-          .limit(5);
+          .limit(300);
 
         if (!dbErr && dbRounds && dbRounds.length > 0) {
-          const dbHighest = Math.max(...dbRounds.map(r => r.drw_no));
-          if (dbHighest > latestKnownRound) {
-            latestKnownRound = dbHighest;
-          }
-
-          // Convert snake_case DB fields to camelCase for frontend
-          const mappedRounds = dbRounds.map(r => ({
-            drwNo: r.drw_no,
-            drwNoDate: r.drw_date || LottoService.getExpectedDate(r.drw_no),
-            numbers: r.numbers,
-            bonus: r.bonus,
-            firstWinamnt: r.first_win_amnt,
-            firstPrzwnerCo: r.first_przwner_co,
-            secondWinAmnt: r.second_win_amnt,
-            secondPrzwnerCo: r.second_przwner_co,
-            thirdWinAmnt: r.third_win_amnt,
-            thirdPrzwnerCo: r.third_przwner_co,
-            fourthWinAmnt: r.fourth_win_amnt,
-            fourthPrzwnerCo: r.fourth_przwner_co,
-            fifthWinAmnt: r.fifth_win_amnt,
-            fifthPrzwnerCo: r.fifth_przwner_co,
-          }));
-
-          setPastDraws(prev => {
-            // DB is the single source of truth. Normal Merge with initial data
-            const dbIds = new Set(mappedRounds.map(d => d.drwNo));
-            const filtered = prev.filter(d => !dbIds.has(d.drwNo));
-            const merged = [...mappedRounds, ...filtered].sort((a, b) => b.drwNo - a.drwNo);
-
-            return merged;
-          });
-
-          console.log('[DB] Synced recent rounds from lotto_history:', mappedRounds.map(r => r.drwNo));
+          const mapped = dbRounds
+            .filter(r => Array.isArray(r.numbers) && r.numbers.length === 6)
+            .map(r => ({
+              drwNo: r.drw_no,
+              drwNoDate: r.drw_date || LottoService.getExpectedDate(r.drw_no),
+              numbers: r.numbers,
+              bonus: r.bonus,
+              firstWinamnt: r.first_win_amnt,
+              firstPrzwnerCo: r.first_przwner_co,
+              secondWinAmnt: r.second_win_amnt,
+              secondPrzwnerCo: r.second_przwner_co,
+              thirdWinAmnt: r.third_win_amnt,
+              thirdPrzwnerCo: r.third_przwner_co,
+              fourthWinAmnt: r.fourth_win_amnt,
+              fourthPrzwnerCo: r.fourth_przwner_co,
+              fifthWinAmnt: r.fifth_win_amnt,
+              fifthPrzwnerCo: r.fifth_przwner_co,
+            }));
+          working = mergeDraws(working, mapped);
+          setPastDraws(prev => mergeDraws(prev, mapped));
         }
       } catch (e) {
         console.warn('[DB] Could not fetch lotto_history:', e);
       }
 
-      // 2. Check if new round is available from scraping
-      const neededRound = LottoService.checkUpdateNeeded(latestKnownRound, pastDraws);
+      // 2. Missing rounds: gaps in the last 60 rounds + the newly expected round
+      const latestKnownRound = working.reduce((m, r) => Math.max(m, r.drwNo), 0);
+      const have = new Set(working.map(r => r.drwNo));
+      const wanted = [];
+      for (let n = Math.max(1, latestKnownRound - 60); n < latestKnownRound; n++) {
+        if (!have.has(n)) wanted.push(n);
+      }
+      const expectedRound = LottoService.checkUpdateNeeded(latestKnownRound, working);
+      if (expectedRound && !wanted.includes(expectedRound)) wanted.push(expectedRound);
 
-      if (neededRound) {
-        console.log(`Getting update for round ${neededRound}...`);
-        const newDrawRecord = await LottoService.fetchRound(neededRound);
-
-        if (newDrawRecord) {
-          setPastDraws(prev => {
-            const cleanPrev = prev.filter(p => p.drwNo !== newDrawRecord.drwNo);
-            const updated = [newDrawRecord, ...cleanPrev].sort((a, b) => b.drwNo - a.drwNo);
-            return updated;
-          });
-          console.log(`Round ${newDrawRecord.drwNo} updated!`);
-
-          // SYNC to DB
-          try {
-            const dbPayload = {
-              drw_no: newDrawRecord.drwNo,
-              drw_date: newDrawRecord.drwNoDate,
-              numbers: newDrawRecord.numbers,
-              bonus: newDrawRecord.bonus,
-              first_win_amnt: newDrawRecord.firstWinamnt,
-              first_przwner_co: newDrawRecord.firstPrzwnerCo,
-              second_win_amnt: newDrawRecord.secondWinAmnt,
-              second_przwner_co: newDrawRecord.secondPrzwnerCo,
-              third_win_amnt: newDrawRecord.thirdWinAmnt,
-              third_przwner_co: newDrawRecord.thirdPrzwnerCo,
-              fourth_win_amnt: newDrawRecord.fourthWinAmnt,
-              fourth_przwner_co: newDrawRecord.fourthPrzwnerCo,
-              fifth_win_amnt: newDrawRecord.fifthWinAmnt,
-              fifth_przwner_co: newDrawRecord.fifthPrzwnerCo,
-              // total_sell_amnt: newDrawRecord.totalSellAmnt, // Removed
-              // first_how: newDrawRecord.firstHow, // Removed
-            };
-
-            const { error: dbErr } = await supabase
-              .from('lotto_history')
-              .upsert(dbPayload, { onConflict: 'drw_no' });
-
-            if (dbErr) console.error('Failed to sync round to DB:', dbErr);
-            else console.log('Synced round to DB successfully.');
-          } catch (syncErr) {
-            console.error('DB Sync Exception:', syncErr);
-          }
+      const fetched = [];
+      for (const n of wanted.slice(0, 30)) {
+        const rec = await LottoService.fetchRound(n);
+        if (rec) {
+          fetched.push(rec);
+          await syncRoundToDb(rec);
         }
       }
+      if (fetched.length > 0) setPastDraws(prev => mergeDraws(prev, fetched));
 
       // Background Job: Process pending results
-      setTimeout(() => {
-        ResultProcessor.processPending(supabase);
-      }, 3000);
+      setTimeout(() => ResultProcessor.processPending(supabase), 3000);
     };
     checkForUpdates();
   }, []);
@@ -229,6 +224,7 @@ function App() {
           <Route path="/articles" element={<ArticlesPage />} />
           <Route path="/articles/:id" element={<ArticleDetailPage />} />
           <Route path="/guide" element={<GuidePage />} />
+          <Route path="/tools" element={<ToolsPage pastDraws={pastDraws} />} />
 
           {/* Fallback */}
           <Route path="*" element={<Navigate to="/" replace />} />

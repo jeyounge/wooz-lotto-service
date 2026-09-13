@@ -10,10 +10,10 @@ export default function ArticlesPage() {
         <div className="home-layout" style={{ minHeight: '100vh', flexDirection: 'column', alignItems: 'center' }}>
             <main className="main-board" style={{ maxWidth: '800px', width: '100%', margin: '40px auto' }}>
                 <header className="main-header" style={{ marginBottom: '30px', textAlign: 'center' }}>
-                    <h1 className="glow-title" style={{ fontSize: '2.5rem' }}>로또/AI 분석 칼럼</h1>
+                    <h1 className="glow-title" style={{ fontSize: '2.5rem' }}>로또 확률·데이터 칼럼</h1>
                     <p style={{ color: '#aaa', marginTop: '10px' }}>
-                        Z-Labs 데이터 사이언스 팀이 제공하는 심층 분석 리포트와 확률 통계 가이드입니다.
-                        단순한 운을 넘어 데이터의 흐름을 읽으세요.
+                        실제 당첨 데이터로 직접 검증한 확률·통계 이야기입니다.
+                        맞힌다는 말 대신, 검증할 수 있는 사실만 씁니다.
                     </p>
                 </header>
 
@@ -42,7 +42,7 @@ export default function ArticlesPage() {
                                 {article.title}
                             </h2>
                             <p style={{ color: '#999', fontSize: '0.95rem', margin: 0, lineHeight: '1.6', display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                                {article.content.replace(/#/g, '').substring(0, 150)}...
+                                {article.content.replace(/[#*|>]/g, '').substring(0, 150)}...
                             </p>
                             <div style={{ marginTop: '20px', color: '#0575e6', fontSize: '0.9rem', fontWeight: 'bold' }}>
                                 리포트 전문 읽기 &rarr;

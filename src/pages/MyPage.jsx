@@ -283,7 +283,7 @@ export default function MyPage({ session, pastDraws, handleLogout }) {
                                         alignItems: 'center',
                                         gap: '4px'
                                     }}>
-                                        🔥 킬 전략 적용
+                                        🔥 구버전 챌린지
                                     </span>
                                 )}
                             </div>

@@ -1,6 +1,10 @@
-import React, { useEffect } from 'react';
+import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import '../App.css';
+
+const h2 = (color) => ({ color, fontSize: '1.5rem', marginTop: '40px', marginBottom: '20px' });
+const p = { marginBottom: '20px' };
+const li = { marginBottom: '10px' };
 
 export default function GuidePage() {
     const navigate = useNavigate();
@@ -11,74 +15,74 @@ export default function GuidePage() {
 
     return (
         <div className="home-layout" style={{ minHeight: '100vh', flexDirection: 'column', alignItems: 'center' }}>
-            <main className="main-board" style={{ maxWidth: '800px', width: '100%', margin: '40px auto', background: '#1c1c1c', padding: '40px', borderRadius: '16px', border: '1px solid #333' }}>
+            <main className="main-board" style={{ maxWidth: '800px', width: '100%', margin: '40px auto', background: '#1c1c1c', padding: '40px', borderRadius: '16px', border: '1px solid #333', boxSizing: 'border-box' }}>
 
                 <header style={{ textAlign: 'center', marginBottom: '40px', borderBottom: '1px solid #333', paddingBottom: '30px' }}>
-                    <h1 className="glow-title" style={{ fontSize: '2.5rem', marginBottom: '15px' }}>로또 Z 심층 이용 가이드</h1>
-                    <p style={{ color: '#aaa', fontSize: '1.1rem', lineHeight: '1.6', wordBreak: 'keep-all' }}>
-                        우리는 어떻게 수백만 가지의 경우의 수 중에서 최적의 번호를 찾아내는가?
-                        결과를 바꾸는 가장 강력한 통계 무기, <strong>'로또 Z 알고리즘'</strong>의 상세 원리를 파헤칩니다.
+                    <h1 className="glow-title" style={{ fontSize: '2.2rem', marginBottom: '15px' }}>로또 Z 엔진 가이드 (v3)</h1>
+                    <p style={{ color: '#aaa', fontSize: '1.05rem', lineHeight: '1.6', wordBreak: 'keep-all' }}>
+                        로또 Z는 당첨 번호를 맞힌다고 말하지 않습니다. 대신 수학적으로 실제로 할 수 있는 일, 즉 <strong>당첨됐을 때 덜 나눠 갖는 조합</strong>을 만드는 데 집중합니다.
                     </p>
                 </header>
 
-                <article className="article-body fade-in" style={{ color: '#ddd', fontSize: '1.05rem', lineHeight: '1.8' }}>
-                    <h2 style={{ color: '#ffd700', fontSize: '1.5rem', marginTop: '30px', marginBottom: '20px' }}>1. 예측 시스템의 철학: 찍는 것이 아니라 지우는 것</h2>
-                    <p style={{ marginBottom: '20px' }}>
-                        로또는 45개의 숫자 중 6개를 맞추는 극악의 확률 게임입니다. 전체 조합의 수는 정확히 8,145,060 가지입니다. 대부분의 사람들은 수동으로 번호를 고를 때 "무엇이 나올까"에 집중합니다. 그러나 Z-Labs의 데이터 사이언티스트들은 발상을 전환했습니다. <strong>"무엇이 절대 나오지 않을까?"</strong>에 집중하는 오답 제거(Elimination) 전략을 채택한 것입니다.
-                    </p>
-                    <p style={{ marginBottom: '20px' }}>
-                        우리의 예측 엔진은 지난 수백 회차의 당첨 결과 데이터를 스캔하여, 이번 회차에 당첨 번호로 출현할 통계적 확률이 '0.1%' 미만으로 수렴하는 이른바 '최악의 번호'들을 우선적으로 찾아냅니다. 쓸모없는 곁가지를 모두 쳐내고, 가장 튼튼하고 생명력 넘치는 가지(번호)들만 남기는 것. 이것이 로또 Z 알고리즘의 대전제입니다.
+                <article className="article-body fade-in" style={{ color: '#ddd', fontSize: '1.05rem', lineHeight: '1.8', wordBreak: 'keep-all' }}>
+                    <h2 style={{ ...h2('#ffd700'), marginTop: '30px' }}>1. 출발점: 로또는 무작위입니다</h2>
+                    <p style={p}>
+                        로또 6/45의 전체 조합은 8,145,060가지이고, 어떤 조합이든 1등 확률은 똑같습니다. 로또 Z는 1회차부터 최신 회차까지 전체 당첨 번호로 여러 패턴을 검정했습니다. 오래 안 나온 번호, 연속 출현 번호, 직전 보너스 번호 모두 다음 회차 출현 확률이 기준값 6/45(약 13.3%)와 통계적으로 구별되지 않았습니다.
                     </p>
 
-                    <h2 style={{ color: '#00f260', fontSize: '1.5rem', marginTop: '40px', marginBottom: '20px' }}>2. AI 4-KILL 전략 (Core Elimination)</h2>
-                    <p style={{ marginBottom: '20px' }}>
-                        메인 화면에서 가장 돋보이는 <strong>4-KILL 시스템</strong>은 로또 Z 예측의 척추와도 같습니다. 버튼을 누를 때마다 시스템은 다음 우선순위에 따라 최대 4개의 숫자를 이번 회차 예측에서 제외(Kill) 처리합니다.
+                    <h2 style={h2('#ff4d4d')}>2. 4-KILL을 폐지한 이유</h2>
+                    <p style={p}>
+                        이전 버전은 직전 보너스, 2주 연속 출현, 장기 미출현 번호 중 4개를 "이번 주에 안 나올 번호"로 제외했습니다. v3 개편 과정에서 이 규칙을 32회차부터 1,241회차까지, 매 회차 그 시점의 데이터만 사용해 다시 검증했습니다.
                     </p>
                     <ul style={{ marginLeft: '20px', marginBottom: '20px', color: '#ccc' }}>
-                        <li style={{ marginBottom: '10px' }}><strong>① 직전 보너스 번호:</strong> 직전 회차에 보너스로 등장한 번호를 제외합니다. 통계적으로 보너스 번호가 다음 회차에 곧바로 본번호로 다시 등장하는 경우는 드뭅니다.</li>
-                        <li style={{ marginBottom: '10px' }}><strong>② 2주 연속 출현 번호:</strong> 직전 2회 연속으로 당첨된 번호는 단기 과열 신호로 간주하여 제외합니다.</li>
-                        <li style={{ marginBottom: '10px' }}><strong>③ 20주 이상 장기 미출현:</strong> 20주 넘게 모습을 보이지 않은 장기 콜드 넘버(Cold Number)를 제외합니다.</li>
-                        <li style={{ marginBottom: '10px' }}><strong>④ 10주 이상 미출현:</strong> 위 조건만으로 4개를 채우지 못한 경우, 10주 이상 미출현한 번호로 마저 채웁니다.</li>
+                        <li style={li}>킬 번호 4개가 모두 빗나간 회차: <strong>55.6%</strong></li>
+                        <li style={li}>아무 번호나 4개를 골랐을 때의 이론값: <strong>55.2%</strong></li>
+                        <li style={li}>규칙별 출현율: 직전 보너스 13.9%, 2주 연속 13.8%, 20주 미출현 12.7%, 10주 미출현 13.4% (기준값 13.3%)</li>
                     </ul>
-
-                    <h2 style={{ color: '#ff4d4d', fontSize: '1.5rem', marginTop: '40px', marginBottom: '20px' }}>3. 왜 5개가 아니라 4개를 제외하는가?</h2>
-                    <p style={{ marginBottom: '20px' }}>
-                        많이 제외할수록 좋을 것 같지만, 데이터는 정반대를 말합니다. 제외 개수를 늘리면 남는 경우의 수는 줄지만, 제외한 번호 중 하나가 실제로 당첨되어 버릴 위험(=그 회차 예측 실패)도 함께 커지기 때문입니다.
-                    </p>
-                    <p style={{ marginBottom: '20px' }}>
-                        로또 Z는 1,227회차 전체 데이터로 <strong>'기대효과 = 제외 성공률 × 경우의 수 절감률'</strong>을 모든 구간에서 계산했습니다. 그 결과 <strong>4개 제외가 24.7%로 가장 높은 기대효과</strong>를 기록했습니다(2개=19.0%, 5개=24.5%, 6개=23.9%). 특히 5개 제외는 성공률이 약 46%로 동전 던지기 수준까지 떨어져, 절반 이상의 회차에서 1등 가능성이 원천 차단되는 부작용이 있었습니다.
-                    </p>
-                    <p style={{ marginBottom: '20px', background: 'rgba(0, 242, 96, 0.08)', padding: '15px', borderRadius: '8px', border: '1px solid rgba(0, 242, 96, 0.3)' }}>
-                        <strong>📊 결론:</strong> 4개 제외 시 경우의 수는 약 814만에서 약 450만으로 줄어들면서도(약 45% 절감), 제외 성공률은 약 55%로 유지됩니다. 무리하게 많이 지우기보다, 가장 효율적인 균형점을 택한 것입니다.
+                    <p style={p}>
+                        즉 4-KILL은 무작위로 번호 4개를 빼는 것과 차이가 없었습니다. 킬 번호 중 2개가 당첨 번호로 나오는 주도 이론상 약 13주에 한 번은 생깁니다. 효과가 없는 기능을 "핵심 기법"으로 내세우는 것은 정직하지 않다고 판단해 폐지했습니다.
                     </p>
 
-                    <h2 style={{ color: '#0575e6', fontSize: '1.5rem', marginTop: '40px', marginBottom: '20px' }}>4. 다차원 점수제 기반 출력 시스템 (Multi-dimensional Scoring)</h2>
-                    <p style={{ marginBottom: '20px' }}>
-                        킬(KILL) 과정을 거쳐 잔존한 41개의 숫자는 단순히 뽑기로 던져지지 않습니다. 로또 Z의 의사결정 인공지능 보드는 이 살아남은 정예 숫자들 각각에 대해 15가지의 가중치 질문을 던져 점수(Score)를 매깁니다.
+                    <h2 style={h2('#00f260')}>3. 대신 할 수 있는 일: 당첨금을 덜 나누기</h2>
+                    <p style={p}>
+                        1등 당첨금은 당첨자 수로 나눕니다. 그래서 확률은 같아도, 많은 사람이 고르는 조합으로 당첨되면 받는 돈이 줄어듭니다. 로또 Z는 회차마다 실제 1등 당첨자 수를 판매량 기준 기대 당첨자 수와 비교해, 어떤 번호 구성이 사람들에게 인기가 있는지 분석했습니다.
                     </p>
                     <ul style={{ marginLeft: '20px', marginBottom: '20px', color: '#ccc' }}>
-                        <li style={{ marginBottom: '10px' }}>모서리 구역(Edge Zone) 집중도 가산점 부여</li>
-                        <li style={{ marginBottom: '10px' }}>끝수(Last Digit) 폭발 주기에 도달한 그룹 번호 가산점 증폭</li>
-                        <li style={{ marginBottom: '10px' }}>직전 회차 보너스 번호 및 이웃수의 회귀 반동 점수 책정</li>
-                        <li style={{ marginBottom: '10px' }}>최근 5주 연속 콜드(Cold) 상태에서 서서히 꿈틀대는 모멘텀 신호의 포착</li>
+                        <li style={li}><strong>12 이하 번호</strong>가 하나 늘 때마다 1등 당첨자가 평균 약 6% 많았습니다. 월·일 같은 날짜 숫자를 고르는 사람이 많기 때문으로 보입니다.</li>
+                        <li style={li}><strong>끝자리가 겹치는 번호</strong>가 하나 늘 때마다 약 4% 많았습니다.</li>
+                        <li style={li}>연속번호, 한 구간 몰림 같은 나머지 특성은 신호가 약해 작은 가중치만 줍니다.</li>
                     </ul>
-                    <p style={{ marginBottom: '20px' }}>
-                        이러한 섬세하고 혹독한 채점표를 뚫고 가장 상위권 성적(Top Rank)을 받은 영광의 번호 6개만이 여러분의 스마트폰 화면에 추천 번호로서 당당하게 모습을 드러내는 것입니다. 화면에 출력된 각 공 아래에 작게 표기된 점수가 바로 이 가중치 환산 점수입니다.
+                    <p style={p}>
+                        이 결과를 합쳐 조합마다 <strong>대중성 지수</strong>를 계산합니다. 1.00배가 무작위 조합의 평균이고, 0.80배라면 1등 당첨 시 나눠 가질 사람이 평균보다 약 20% 적다고 추정한다는 뜻입니다. 효과 크기는 크지 않은 추정치이며, 당첨을 보장하지 않습니다.
                     </p>
 
-                    <h2 style={{ color: '#ffd700', fontSize: '1.5rem', marginTop: '40px', marginBottom: '20px' }}>결언: 숫자는 거짓말을 하지 않습니다</h2>
-                    <p style={{ marginBottom: '20px' }}>
-                        물론 로또는 신의 영역이며, 기계가 아무리 수학을 분석해도 100% 당첨을 장담할 수는 없습니다. 하지만 로또 Z는 모호한 미신이나 꿈에 의존하는 맹목적 도박의 세계에, 투명하고 검증 가능한 데이터 과학의 지표를 던졌습니다. 우연 속에서 질서를 찾으려는 인류의 도전은 멈추지 않을 것입니다. 오직 여러분의 판단만이 마지막 남은 퍼즐의 한 조각입니다.
+                    <h2 style={h2('#0575e6')}>4. 번호가 만들어지는 과정</h2>
+                    <ul style={{ marginLeft: '20px', marginBottom: '20px', color: '#ccc' }}>
+                        <li style={li}>45개 번호에서 완전히 무작위로 6개짜리 후보를 30개 만듭니다.</li>
+                        <li style={li}>역대 1등 번호와 똑같은 조합, 등차수열, 같은 수의 배수만 있는 조합, 모두 31 이하인 날짜형 조합은 뺍니다.</li>
+                        <li style={li}>남은 후보 중 대중성 지수가 가장 낮은 조합을 보여 드립니다.</li>
+                    </ul>
+                    <p style={p}>
+                        후보를 매번 새로 뽑기 때문에 이용자들이 같은 "비인기 조합"으로 몰리지 않습니다. 모두가 똑같은 비인기 조합을 사면, 그 조합은 더 이상 비인기 조합이 아니기 때문입니다.
                     </p>
 
+                    <h2 style={h2('#ffd700')}>5. 도구함: 백테스트와 휠링</h2>
+                    <p style={p}>
+                        <strong>내 번호 백테스트</strong>는 번호 한 줄을 1회차부터 매주 샀다면 몇 등에 몇 번 당첨됐을지, 무작위 기대값과 나란히 보여 줍니다. <strong>휠링 조합기</strong>는 번호 7~15개를 고르면 "당첨 번호가 고른 번호 안에 3개(또는 4개) 이상 있으면 최소 1장은 5등(또는 4등) 이상"을 수학적으로 보장하는 최소 조합표를 만듭니다.
+                    </p>
+
+                    <h2 style={h2('#ffd700')}>맺음말</h2>
+                    <p style={p}>
+                        로또의 장기 회수율은 판매액의 약 50%로 설계되어 있습니다. 로또 Z는 이 사실을 숨기지 않고, 그 안에서 합리적으로 즐기는 방법만 제공합니다. 구매는 반드시 즐거운 범위 안에서 해 주세요.
+                    </p>
                 </article>
 
-                <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center', gap: '15px' }}>
+                <div style={{ marginTop: '50px', display: 'flex', justifyContent: 'center', gap: '15px', flexWrap: 'wrap' }}>
                     <button onClick={() => navigate('/')} className="btn-predict-outline" style={{ padding: '15px 30px', fontSize: '1.1rem' }}>
-                        로또 Z 예측 홈으로
+                        로또 Z 홈으로
                     </button>
-                    <button onClick={() => navigate('/articles')} className="btn-predict-outline" style={{ padding: '15px 30px', fontSize: '1.1rem', backgroundColor: 'rgba(5, 117, 230, 0.1)' }}>
-                        📝 분석 칼럼 더 읽기
+                    <button onClick={() => navigate('/tools')} className="btn-predict-outline" style={{ padding: '15px 30px', fontSize: '1.1rem', backgroundColor: 'rgba(5, 117, 230, 0.1)' }}>
+                        🧰 도구함 열기
                     </button>
                 </div>
             </main>

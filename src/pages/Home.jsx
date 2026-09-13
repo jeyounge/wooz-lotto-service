@@ -1,6 +1,6 @@
 import { useState, useMemo, useEffect } from 'react'
 import { useNavigate } from 'react-router-dom'
-import LottoPredictorV5 from '../utils/LottoPredictorV5' // Upgraded to V5
+import { LottoEngine, popularityIndex } from '../utils/LottoEngine'
 import { supabase } from '../supabaseClient' // Adjusted path
 import Auth from '../components/Auth' // Adjusted path
 import { getPredictionStatus } from '../utils/timeUtils'
@@ -11,7 +11,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
     // --- State Variables ---
     const [numbers, setNumbers] = useState([]);
-    const [scores, setScores] = useState([]);
+    const [, setScores] = useState([]);
     const [analysis, setAnalysis] = useState([]);
     const [isAnalyzing, setIsAnalyzing] = useState(false);
     const [allWeights, setAllWeights] = useState([]);
@@ -19,9 +19,6 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
     // Global Statistics
     const [globalStats, setGlobalStats] = useState({ count: 0, totalPrize: 0, currentRoundCount: 0 });
-
-    // Kill Strategy Stats
-    const [killStats, setKillStats] = useState(null);
 
     // Derived Data (Moved Up)
     const lastRound = useMemo(() => {
@@ -69,41 +66,6 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         };
         fetchStats();
 
-        // Fetch Kill Stats (New)
-        const fetchKillStats = async () => {
-            const { data, error } = await supabase
-                .from('kill_records')
-                .select('*')
-                .order('drw_no', { ascending: false })
-                .limit(30);
-
-            if (!error && data) {
-                // Calculate effectiveness (Per Number Basis for Higher %)
-                const totalRounds = data.length;
-
-                // 3-Kill Stats
-                const totalKill3Candidates = totalRounds * 3;
-                const totalKill3Hits = data.reduce((acc, curr) => acc + (curr.kill3_hit_count || 0), 0);
-                const totalKill3Success = totalKill3Candidates - totalKill3Hits;
-
-                // 5-Kill Stats
-                const totalKill5Candidates = totalRounds * 5;
-                const totalKill5Hits = data.reduce((acc, curr) => acc + (curr.kill5_hit_count || 0), 0);
-                const totalKill5Success = totalKill5Candidates - totalKill5Hits;
-
-                setKillStats({
-                    recent: data.slice(0, 5), // Show top 5 in table
-                    total: totalRounds,
-                    successRate3: Math.round((totalKill3Success / totalKill3Candidates) * 100),
-                    successRate5: Math.round((totalKill5Success / totalKill5Candidates) * 100),
-                    successCount3: totalKill3Success, // Display actual excluded numbers
-                    successCount5: totalKill5Success,
-                    totalCandidates3: totalKill3Candidates,
-                    totalCandidates5: totalKill5Candidates
-                });
-            }
-        };
-        fetchKillStats();
 
     }, [nextRound]);
 
@@ -116,11 +78,11 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
 
     // Predictor Instance
-    const currentPredictor = useMemo(() => new LottoPredictorV5(pastDraws), [pastDraws]);
+    const currentPredictor = useMemo(() => new LottoEngine(pastDraws), [pastDraws]);
 
     // Load Weights (Use current predictor)
     useEffect(() => {
-        setAllWeights(currentPredictor.getAllScores());
+        setAllWeights(currentPredictor.getFrequency(52));
     }, [currentPredictor]);
 
     // Check Prediction Status (Time Restrictions)
@@ -182,7 +144,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
 
         setTimeout(async () => {
             const result = currentPredictor.predict();
-            const calculatedScores = currentPredictor.getScores(result.numbers);
+            const calculatedScores = [];
 
             setNumbers(result.numbers);
             setScores(calculatedScores);
@@ -245,20 +207,14 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         // (It's deterministic based on numbers, so safe to recalc)
         // Note: History items won't restore the exact specific Kill List of that time, 
         // but the scores calculation is generic V4 logic.
-        const currentScores = item.scores || predictorV5Normal.getScores(item.numbers);
+        const currentScores = item.scores || [];
         setScores(currentScores);
 
         // 2. Analysis: MUST use DB version if available to preserve the "feeling"
         if (item.analysis && item.analysis.length > 0) {
             setAnalysis(item.analysis);
         } else {
-            // Fallback: Re-generate simple analysis if missing
-            const totalScore = currentScores.reduce((a, b) => a + b.score, 0);
-            const reAnalysis = [
-                `PC 추정: ${Math.round(totalScore / 6)}점`,
-                `재분석 완료 (${item.date})`
-            ];
-            setAnalysis(reAnalysis);
+            setAnalysis(currentPredictor.analyze(item.numbers));
         }
     }
 
@@ -275,7 +231,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         <div className="home-layout">
             <main className="main-board">
                 <header className="main-header">
-                    <h1 className="glow-title">로또 Z 예측 시스템</h1>
+                    <h1 className="glow-title">로또 Z 비인기 조합 생성기</h1>
                     <div style={{ display: 'flex', gap: '15px', justifyContent: 'center', marginTop: '10px', color: '#aaa', fontSize: '0.85rem', flexWrap: 'wrap' }}>
                         <span>🎯 전체: <strong style={{ color: '#ffd700' }}>{globalStats.count.toLocaleString()}</strong></span>
                         <span>🔥 <strong>{nextRound}회</strong>: <strong style={{ color: '#ff9f43' }}>{globalStats.currentRoundCount?.toLocaleString() || 0}</strong></span>
@@ -305,106 +261,37 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                             {/* SEO & AD BOT DYNAMIC CONTENT: Weekly text summary rendered without clicks */}
                             <div className="seo-dynamic-report" style={{ marginTop: '20px', padding: '15px', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '8px', fontSize: '0.85rem', color: '#ccc', lineHeight: '1.6', textAlign: 'left' }}>
                                 <strong style={{ color: '#fff', display: 'block', marginBottom: '8px' }}>📊 {lastRound.drwNo}회차 데이터 분석 브리핑</strong>
-                                최근 진행된 {lastRound.drwNo}회 추첨 결과, 당첨 번호는 <strong>{lastRound.numbers.join(', ')}</strong> 번이고 보너스 번호는 <strong>{lastRound.bonus}</strong> 번이 등장했습니다.
-                                이번 회차에서는 총 <strong>{lastRound.firstPrzwnerCo > 0 ? `${lastRound.firstPrzwnerCo}명` : 'N명'}</strong>의 1등 당첨자가 배출되어 각각 약 <strong>{lastRound.firstWinamnt > 0 ? `${new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt)}원` : '집계 중'}</strong>의 당첨금을 수령하게 되었습니다.
-                                로또 Z의 빅데이터 AI 엔진은 즉각적으로 {lastRound.drwNo}회차 당첨 결과의 모서리 패턴, 끝수 분포 빈도, 콜드 넘버(장기 미출현) 해소 여부 등의 심층 통계 데이터를 메인 DB에 성공적으로 학습 완료했습니다.
-                                이를 바탕으로 한층 더 정교하게 업데이트된 <strong>{nextRound}회차 전용 AI 킬 알고리즘</strong> 백테스팅이 현재 구동 준비를 마쳤습니다.
+                                최근 진행된 {lastRound.drwNo}회 추첨의 당첨 번호는 <strong>{lastRound.numbers.join(', ')}</strong>, 보너스 번호는 <strong>{lastRound.bonus}</strong>입니다.
+                                1등 당첨자는 <strong>{lastRound.firstPrzwnerCo > 0 ? lastRound.firstPrzwnerCo + '명' : '집계 중'}</strong>이고, 1인당 당첨금은 <strong>{lastRound.firstWinamnt > 0 ? new Intl.NumberFormat('ko-KR').format(lastRound.firstWinamnt) + '원' : '집계 중'}</strong>입니다.
+                                로또 Z 대중성 모델로 이 당첨 조합을 평가하면 대중성 지수는 <strong>{popularityIndex(lastRound.numbers).toFixed(2)}배</strong>입니다. 1.00배보다 높으면 평균적인 조합보다 많은 사람이 고르는 번호 구성이라는 뜻입니다.
+                                다음 {nextRound}회차도 모든 조합의 1등 확률은 똑같이 8,145,060분의 1입니다.
                             </div>
                         </div>
                     )}
                 </section>
 
-                {/* KILL STRATEGY STATS CARD */}
-                {killStats && (
-                    <section className="kill-stats-card fade-in" style={{ margin: '0 20px 20px', padding: '15px', background: '#1e1e1e', borderRadius: '12px', border: '1px solid #333' }}>
-                        <h3 style={{ margin: '0 0 10px', fontSize: '1rem', color: '#ff6b6b', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '6px' }}>
-                            🛡️ 킬 전략 적중률 (최근 {killStats.total}회)
-                        </h3>
-
-                        <div style={{ display: 'flex', justifyContent: 'center', marginBottom: '15px', background: '#252525', padding: '10px', borderRadius: '8px' }}>
-                            <div style={{ textAlign: 'center' }}>
-                                <div style={{ fontSize: '0.8rem', color: '#aaa' }}>킬 번호 제외 적중</div>
-                                <div style={{ fontSize: '1.2rem', fontWeight: 'bold', color: killStats.successRate5 >= 80 ? '#00f260' : '#fff' }}>
-                                    {killStats.successRate5}%
-                                </div>
-                                <div style={{ fontSize: '0.7rem', color: '#666' }}>({killStats.successCount5}/{killStats.totalCandidates5}개)</div>
-                            </div>
-                        </div>
-
-                        <div className="kill-history-table">
-                            <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.8rem' }}>
-                                <thead>
-                                    <tr style={{ borderBottom: '1px solid #444', color: '#888' }}>
-                                        <th style={{ padding: '5px', textAlign: 'left' }}>회차</th>
-                                        <th style={{ padding: '5px' }}>킬 번호</th>
-                                        <th style={{ padding: '5px', textAlign: 'right' }}>결과</th>
-                                    </tr>
-                                </thead>
-                                <tbody>
-                                    {killStats.recent.map(r => (
-                                        <tr key={r.drw_no} style={{ borderBottom: '1px solid #2a2a2a', color: '#ddd' }}>
-                                            <td style={{ padding: '8px 5px', color: '#aaa' }}>{r.drw_no}</td>
-                                            <td style={{ padding: '8px 5px', textAlign: 'center' }}>
-                                                <div style={{ display: 'flex', gap: '4px', justifyContent: 'center' }}>
-                                                    {r.kill5_list && r.kill5_list.map(n => (
-                                                        <span key={n} style={{
-                                                            background: r.actual_numbers.includes(n) ? '#ff4d4d' : '#333',
-                                                            color: r.actual_numbers.includes(n) ? '#fff' : '#aaa',
-                                                            padding: '2px 6px', borderRadius: '4px', fontSize: '0.75rem',
-                                                            textDecoration: r.actual_numbers.includes(n) ? 'none' : 'line-through'
-                                                        }}>
-                                                            {n}
-                                                        </span>
-                                                    ))}
-                                                </div>
-                                            </td>
-                                            <td style={{ padding: '8px 5px', textAlign: 'right' }}>
-                                                {r.kill5_success ? '✅' : '❌'}
-                                            </td>
-                                        </tr>
-                                    ))}
-                                </tbody>
-                            </table>
-                        </div>
-                    </section>
-                )}
-
-                {/* KILL Strategy Banner - Dynamic based on currentPredictor state */}
-                {currentPredictor.killList && currentPredictor.killList.length > 0 && (
-                    <section className="kill-banner fade-in" style={{ margin: '0 20px 20px', padding: '20px', background: 'rgba(255, 0, 0, 0.08)', border: '1px solid rgba(255, 0, 0, 0.2)', borderRadius: '16px', textAlign: 'center' }}>
-
-                        {/* CORE KILL (동적 킬 수) */}
-                        <div className="kill-section-core">
-                            <h3 style={{ margin: '0 0 15px 0', fontSize: '1.1rem', color: '#ff4d4d', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', fontWeight: 'bold' }}>
-                                ☠️ 로또 Z 핵심 기법 [{currentPredictor.killList.length}-KILL]
-                            </h3>
-                            <div className="kill-list" style={{ display: 'flex', gap: '20px', justifyContent: 'center', flexWrap: 'wrap' }}>
-                                {currentPredictor.killList.map(num => (
-                                    <div key={num} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', width: '120px' }}>
-                                        <div className={`mini-ball`} style={{ width: '40px', height: '40px', lineHeight: '38px', fontSize: '1.1rem', background: '#2a2a2a', color: '#ff6b6b', textDecoration: 'line-through', border: '1px solid #ff4d4d' }}>{num}</div>
-                                        <span style={{ fontSize: '0.75rem', color: '#ccc', marginTop: '6px', fontWeight: '500', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', width: '100%', textAlign: 'center' }}>
-                                            {currentPredictor.killReasons[num]?.split('(')[0] || '제외'}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <p style={{ margin: '15px 0 0', fontSize: '0.8rem', color: '#888' }}>
-                            * 위 번호들은 AI 킬 전략에 의해 이번 예측에서 <strong>100% 제외</strong>되어, 남은 {45 - currentPredictor.killList.length}개 숫자로 조합을 생성합니다.
-                        </p>
-                    </section>
-                )}
+                {/* v3: honest engine card (replaces the 4-KILL banner and kill stats) */}
+                <section className="fade-in" style={{ margin: '0 20px 20px', padding: '20px', background: 'rgba(0, 242, 96, 0.06)', border: '1px solid rgba(0, 242, 96, 0.25)', borderRadius: '16px' }}>
+                    <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#00f260', textAlign: 'center' }}>🎯 로또 Z v3: 맞히는 척 대신, 덜 나눠 갖는 조합</h3>
+                    <ul style={{ margin: 0, paddingLeft: '18px', color: '#ccc', fontSize: '0.88rem', lineHeight: '1.7' }}>
+                        <li><strong style={{ color: '#fff' }}>당첨 확률은 못 올립니다.</strong> 모든 조합의 1등 확률은 똑같이 8,145,060분의 1입니다.</li>
+                        <li><strong style={{ color: '#fff' }}>대신 당첨금을 덜 나누게 합니다.</strong> 1,227회 실제 1등 당첨자 수를 분석해, 사람들이 많이 고르는 구성(12 이하 번호, 겹치는 끝수)을 피한 조합을 만듭니다.</li>
+                        <li><strong style={{ color: '#fff' }}>4-KILL은 폐지했습니다.</strong> 1,210회 백테스트에서 킬 번호 4개가 모두 빗나간 비율은 55.6%로, 아무 번호 4개를 고른 경우(55.2%)와 차이가 없었습니다.</li>
+                    </ul>
+                    <div style={{ marginTop: '15px', textAlign: 'center' }}>
+                        <button onClick={() => navigate('/tools')} className="btn-predict-outline" style={{ padding: '8px 16px', fontSize: '0.9rem' }}>
+                            🧰 내 번호 백테스트 · 휠링 조합기
+                        </button>
+                    </div>
+                </section>
                 <section className="prediction-stage">
                     {numbers.length > 0 ? (
                         <div className="active-prediction fade-in">
                             <div className="prediction-balls">
                                 {numbers.map((num, i) => {
-                                    const scoreObj = scores.find(s => s.num === num);
                                     return (
                                         <div key={i} className="ball-wrapper">
                                             <div className={`main-ball ball-${getBallColor(num)}`}>{num}</div>
-                                            <span className="ball-score">{scoreObj ? scoreObj.score : 0}점</span>
                                         </div>
                                     )
                                 })}
@@ -419,7 +306,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     {predictionStatus.isOpen ? (
                         <div style={{ display: 'flex', flexDirection: 'column', gap: '15px', justifyContent: 'center', width: '100%', maxWidth: '300px', margin: '0 auto' }}>
                             <button className="btn-predict-outline" onClick={() => generateNumbers()} disabled={isAnalyzing} style={{ flex: 1, padding: '15px' }}>
-                                예측 번호 생성 (AI 킬 적용)
+                                비인기 조합 생성
                             </button>
                         </div>
                     ) : (
@@ -458,7 +345,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     )}
 
                     <div className="weight-grid-section">
-                        <h4>📋 전체 번호별 가중치 점수 (Top 45)</h4>
+                        <h4>📋 최근 52주 번호별 출현 횟수 (참고용 사실 데이터)</h4>
                         <div className="weight-grid">
                             {allWeights.map((item) => (
                                 <div key={item.num} className={`weight-box ball-${getBallColor(item.num)}`}>
@@ -473,25 +360,25 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                 {/* ADSENSE CONTENT ENRICHMENT: Detailed Guide Section */}
                 <section className="guide-card" style={{ margin: '0 20px 20px', padding: '25px', background: '#1c1c1c', borderRadius: '16px', border: '1px solid #333', color: '#ddd', lineHeight: '1.6' }}>
                     <h2 style={{ color: '#ffd700', fontSize: '1.4rem', marginBottom: '15px', borderBottom: '1px solid #333', paddingBottom: '10px' }}>
-                        💡 로또 Z 인공지능 예측 시스템 가이드
+                        💡 로또 Z는 이렇게 번호를 만듭니다
                     </h2>
 
-                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. AI 킬(KILL) 전략 (기본 예측)</h3>
+                    <h3 style={{ color: '#fff', fontSize: '1.1rem', marginTop: '20px' }}>1. 무작위 후보 30개 중 가장 덜 붐비는 1개</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        데이터 기반 번호 제외 전략입니다. 로또 Z는 1,227회차 전체 당첨 데이터를 전수 분석한 결과, "킬 개수가 많을수록 좋다"는 통념을 버리고 <strong>성공률 × 경우의 수 절감률(기대효과)이 가장 높은 4개 제외</strong>를 기본값으로 채택했습니다(4킬 기대효과 24.7%로 전 구간 최고). 우선순위는 ① 직전 보너스 번호 ② 2주 연속 출현 번호 ③ 20주 이상 장기 미출현 ④ 10주 이상 미출현 순이며, 조건에 따라 최대 4개를 제외하고 남은 41개 숫자로 조합을 생성합니다.
+                        버튼을 누르면 45개 번호에서 완전히 무작위로 6개짜리 후보 30개를 만듭니다. 역대 1등 번호와 똑같은 조합, 등차수열이나 모두 31 이하인 날짜형 조합처럼 사람들이 일부러 고르는 뻔한 패턴은 뺍니다. 남은 후보 중 대중성 지수가 가장 낮은 조합 하나를 보여 드립니다. 후보를 매번 새로 뽑기 때문에 이용자 모두가 같은 번호를 받게 되는 일도 없습니다.
                     </p>
 
-                    <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>2. 다이내믹 버킷 가중치 스코어링 시스템</h3>
+                    <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>2. 대중성 지수는 어떻게 계산하나요?</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
-                        로또 Z의 AI 모델은 역대 1등 당첨 번호 빅데이터를 분석하여 "황금 비율"을 도출했습니다. 앞서 킬 기법으로 제외된 번호들을 뺀 나머지 41개의 번호를 최근 출현 주차에 따라 4개의 그룹(Hot, Warm, Cool, Cold)으로 분류합니다. 각 그룹이 역대 당첨 번호에서 차지하는 실제 확률(예: 최근 5주 출현 번호 51.1%)에 기반하여 동적으로 가중치를 할당합니다. 이렇게 선별된 추천 번호는 단순 난수가 아닌, 가장 이상적인 역대 1등 당첨 패턴에 부합하는 조합입니다.
+                        회차마다 실제 1등 당첨자 수를 판매량으로 계산한 기대 당첨자 수와 비교했습니다. 당첨 번호에 12 이하 숫자가 하나 늘 때마다 1등 당첨자는 평균 약 6% 많았고, 끝자리가 겹치는 번호가 하나 늘 때마다 약 4% 많았습니다. 생일이나 날짜로 번호를 고르는 사람이 많기 때문으로 보입니다. 대중성 지수 1.00배는 무작위 조합의 평균입니다. 0.80배라면 1등에 당첨됐을 때 나눠 가질 사람이 평균보다 약 20% 적다고 추정한다는 뜻입니다.
                     </p>
 
                     <div style={{ background: 'rgba(5, 117, 230, 0.1)', border: '1px solid rgba(5, 117, 230, 0.3)', padding: '15px', borderRadius: '8px', marginTop: '25px', fontSize: '0.85rem' }}>
                         * 로또 Z는 사용자의 당첨을 보장하지 않으며, 모든 예측 조합은 통계 기반의 확률적 결과물일 뿐 참고 용도로만 활용하시기 바랍니다.
-                        빅데이터가 추천하는 이 주의 황금 번호 라인업으로 여러분의 행운을 극대화해 보세요! 🍀
+                        로또는 즐거운 범위 안에서만 구매해 주세요. 로또 Z는 당첨 확률을 높여 준다고 말하지 않습니다. 🍀
                         <div style={{ marginTop: '15px', textAlign: 'center' }}>
                             <button onClick={() => navigate('/guide')} className="btn-predict-outline" style={{ padding: '8px 16px', fontSize: '0.9rem', backgroundColor: 'transparent' }}>
-                                📖 Z-Labs 예측 알고리즘 상세 가이드 읽기
+                                📖 로또 Z 엔진 상세 가이드 읽기
                             </button>
                         </div>
                     </div>

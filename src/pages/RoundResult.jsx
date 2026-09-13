@@ -290,14 +290,14 @@ export default function RoundResult({ pastDraws }) {
                 {simStats && (
                     <section className="info-card fade-in" style={{ padding: '20px', background: 'linear-gradient(135deg, #1e1e23 0%, #2a2a30 100%)', border: '1px solid #444', marginBottom: '20px' }}>
                         <div style={{ textAlign: 'center', marginBottom: '15px' }}>
-                            <h3 style={{ margin: 0, color: '#fff' }}>🛡️ AI 예측성과 vs 완전랜덤</h3>
+                            <h3 style={{ margin: 0, color: '#fff' }}>🎲 로또 Z 이용자 조합 vs 완전랜덤</h3>
                             <p style={{ margin: '5px 0 0', fontSize: '0.9rem', color: '#888' }}>
                                 동일한 횟수({stats.total}회)로 시뮬레이션 돌린 결과입니다.
                             </p>
                         </div>
 
                         <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '15px' }}>
-                            {/* Left: AI */}
+                            {/* Left: Lotto Z users */}
                             <div style={{ background: 'rgba(0, 242, 96, 0.1)', padding: '15px', borderRadius: '10px', textAlign: 'center', border: '1px solid #00f260' }}>
                                 <div style={{ color: '#00f260', fontWeight: 'bold', marginBottom: '5px' }}>로또 Z</div>
                                 <div style={{ fontSize: '1.2rem', color: '#fff', fontWeight: 'bold', marginBottom: '5px' }}>
@@ -329,9 +329,9 @@ export default function RoundResult({ pastDraws }) {
                         {/* Result Message */}
                         <div style={{ textAlign: 'center', marginTop: '15px', fontWeight: 'bold' }}>
                             {stats.sum.money > simStats.totalPrize ? (
-                                <span style={{ color: '#00f260' }}>AI의 승리입니다! 🤖👍 전략이 통했네요!</span>
+                                <span style={{ color: '#00f260' }}>이번 표본에서는 로또 Z 쪽이 앞섰습니다. 장기적으로는 어떤 조합이든 기대값이 같습니다.</span>
                             ) : stats.sum.money < simStats.totalPrize ? (
-                                <span style={{ color: '#ff4500' }}>이번엔 운이 더 좋았네요... 😅 (랜덤 승)</span>
+                                <span style={{ color: '#ff4500' }}>이번 표본에서는 랜덤 쪽이 앞섰습니다. 장기적으로는 어떤 조합이든 기대값이 같습니다.</span>
                             ) : (
                                 <span style={{ color: '#ccc' }}>무승부! 막상막하네요. 🤝</span>
                             )}
