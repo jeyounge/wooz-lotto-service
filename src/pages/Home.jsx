@@ -4,6 +4,8 @@ import { LottoEngine, popularityIndex } from '../utils/LottoEngine'
 import { supabase } from '../supabaseClient' // Adjusted path
 import Auth from '../components/Auth' // Adjusted path
 import { getPredictionStatus } from '../utils/timeUtils'
+import { computePatternReport } from '../utils/PatternStats'
+import PatternReport from '../components/PatternReport'
 import '../App.css'
 
 export default function Home({ session, userProfile, pastDraws, handleLogout, refreshProfile }) {
@@ -80,6 +82,23 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
     // Predictor Instance
     const currentPredictor = useMemo(() => new LottoEngine(pastDraws), [pastDraws]);
 
+    // Weekly pattern report (walk-forward stats) + optional user filters
+    const patternReport = useMemo(() => computePatternReport(pastDraws), [pastDraws]);
+    const [patternFilters, setPatternFilters] = useState({});
+    const togglePatternFilter = (id) => setPatternFilters(prev => ({ ...prev, [id]: !prev[id] }));
+
+    const buildGenerateOptions = () => {
+        const exclude = new Set();
+        const labels = [];
+        (patternReport?.numberRules || []).forEach(rule => {
+            if (!patternFilters[rule.id] || rule.upcoming.length === 0) return;
+            rule.upcoming.forEach(x => exclude.add(x));
+            labels.push(rule.upcoming.length <= 6 ? `${rule.label} 제외(${rule.upcoming.join(', ')})` : `${rule.label} ${rule.upcoming.length}개 제외`);
+        });
+        if (patternFilters.noConsecutive) labels.push('연속번호 없는 조합만');
+        return { excludeNumbers: [...exclude], noConsecutive: !!patternFilters.noConsecutive, filterLabels: labels };
+    };
+
     // Load Weights (Use current predictor)
     useEffect(() => {
         setAllWeights(currentPredictor.getFrequency(52));
@@ -143,7 +162,14 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
         setIsAnalyzing(true);
 
         setTimeout(async () => {
-            const result = currentPredictor.generate();
+            let result;
+            try {
+                result = currentPredictor.generate(buildGenerateOptions());
+            } catch (err) {
+                alert(err.message);
+                setIsAnalyzing(false);
+                return;
+            }
             const calculatedScores = [];
 
             setNumbers(result.numbers);
@@ -284,6 +310,9 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                         </button>
                     </div>
                 </section>
+
+                <PatternReport report={patternReport} filters={patternFilters} onToggle={togglePatternFilter} disabled={isAnalyzing} />
+
                 <section className="prediction-stage">
                     {numbers.length > 0 ? (
                         <div className="active-prediction fade-in">
