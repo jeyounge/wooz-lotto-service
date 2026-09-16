@@ -301,7 +301,8 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     <h3 style={{ margin: '0 0 12px', fontSize: '1.1rem', color: '#00f260', textAlign: 'center' }}>🎯 로또 Z v3: 맞히는 척 대신, 덜 나눠 갖는 조합</h3>
                     <ul style={{ margin: 0, paddingLeft: '18px', color: '#ccc', fontSize: '0.88rem', lineHeight: '1.7' }}>
                         <li><strong style={{ color: '#fff' }}>당첨 확률은 못 올립니다.</strong> 모든 조합의 1등 확률은 똑같이 8,145,060분의 1입니다.</li>
-                        <li><strong style={{ color: '#fff' }}>대신 당첨금을 덜 나누게 합니다.</strong> 1,227회 실제 1등 당첨자 수를 분석해, 사람들이 많이 고르는 구성(12 이하 번호, 겹치는 끝수)을 피한 조합을 만듭니다.</li>
+                        <li><strong style={{ color: '#fff' }}>대신 당첨금을 덜 나누게 합니다.</strong> 1,227회 실제 1등 당첨자 수를 분석해, 사람들이 많이 고르는 구성(겹치는 끝수 등)을 덜 고릅니다.</li>
+                        <li><strong style={{ color: '#fff' }}>번호 구조는 역대 당첨번호와 같습니다.</strong> 12 이하 번호 개수는 역대 1,241회 분포(평균 1.57개)에서 뽑습니다. 낮은 번호를 아예 빼지 않습니다.</li>
                         <li><strong style={{ color: '#fff' }}>4-KILL은 폐지했습니다.</strong> 1,210회 백테스트에서 킬 번호 4개가 모두 빗나간 비율은 55.6%로, 아무 번호 4개를 고른 경우(55.2%)와 차이가 없었습니다.</li>
                     </ul>
                     <div style={{ marginTop: '15px', textAlign: 'center' }}>
@@ -400,6 +401,7 @@ export default function Home({ session, userProfile, pastDraws, handleLogout, re
                     <h3 style={{ color: '#00f260', fontSize: '1.1rem', marginTop: '20px' }}>2. 대중성 지수는 어떻게 계산하나요?</h3>
                     <p style={{ fontSize: '0.9rem', color: '#aaa', marginBottom: '15px' }}>
                         회차마다 실제 1등 당첨자 수를 판매량으로 계산한 기대 당첨자 수와 비교했습니다. 당첨 번호에 12 이하 숫자가 하나 늘 때마다 1등 당첨자는 평균 약 6% 많았고, 끝자리가 겹치는 번호가 하나 늘 때마다 약 4% 많았습니다. 생일이나 날짜로 번호를 고르는 사람이 많기 때문으로 보입니다. 대중성 지수 1.00배는 무작위 조합의 평균입니다. 0.80배라면 1등에 당첨됐을 때 나눠 가질 사람이 평균보다 약 20% 적다고 추정한다는 뜻입니다.
+                        다만 이 지수를 끝까지 밀어붙이면 12 이하 번호가 한 개도 없는 조합만 나오고, 합계도 역대 평균 138에서 175로 치우칩니다. 그래서 v3.2부터는 12 이하 개수를 역대 분포에서 먼저 뽑고, 대중성은 그 안에서만 반영합니다. 지수 이득은 줄지만 번호 구조는 실제 당첨번호와 같아집니다.
                     </p>
 
                     <div style={{ background: 'rgba(5, 117, 230, 0.1)', border: '1px solid rgba(5, 117, 230, 0.3)', padding: '15px', borderRadius: '8px', marginTop: '25px', fontSize: '0.85rem' }}>
